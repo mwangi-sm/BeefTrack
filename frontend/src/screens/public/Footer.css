@@ -1,0 +1,109 @@
+.site-footer {
+  background: var(--maroon-950, #3d0a10);
+  color: rgba(250, 246, 236, 0.82);
+  padding: 34px 6% 0;
+}
+
+.footer-grid {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+  gap: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(250, 246, 236, 0.14);
+}
+
+@media (max-width: 900px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.footer-brand .footer-logo {
+  width: 170px;
+  height: auto;
+  margin-bottom: 14px;
+  filter: brightness(0) invert(1) opacity(0.92);
+}
+
+.footer-brand p,
+.footer-note {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: rgba(250, 246, 236, 0.65);
+  margin: 0;
+  max-width: 320px;
+}
+
+.footer-col h4 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-400, #e3c567);
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-col a,
+.footer-col button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: rgba(250, 246, 236, 0.75);
+  font-size: 13.5px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-col a:hover,
+.footer-col button:hover {
+  color: var(--gold-400, #e3c567);
+}
+
+.footer-contact li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  color: rgba(250, 246, 236, 0.75);
+}
+
+.footer-contact svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: var(--gold-400, #e3c567);
+}
+
+.footer-bottom {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 0 18px;
+  font-size: 12px;
+  color: rgba(250, 246, 236, 0.5);
+}

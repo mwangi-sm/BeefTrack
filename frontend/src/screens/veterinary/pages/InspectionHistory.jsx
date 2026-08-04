@@ -1,0 +1,20 @@
+import { useMemo, useState } from 'react'
+import { DashboardShell } from '../../../components/DashboardShell'
+import { getVeterinaryNavItems } from '../data/veterinaryNav'
+import '../components/VeterinaryDashboard.css'
+
+export function InspectionHistory({ farms, animals, onBack, onOpenLookup, onLogout, onToggleTheme }) {
+  const [search, setSearch] = useState('')
+  const [farmId, setFarmId] = useState('')
+  const [type, setType] = useState('')
+  const [selected, setSelected] = useState(null)
+  const records = useMemo(() => animals.flatMap((animal) => (animal.inspections || animal.vetVisits || []).map((visit) => ({ ...visit, animal }))).filter((record) => (!farmId || record.animal.farmId === farmId) && (!type || (record.type || 'Veterinary visit') === type) && (!search || `${record.animal.id} ${record.animal.name || ''} ${record.notes || ''}`.toLowerCase().includes(search.toLowerCase()))).sort((a, b) => b.date.localeCompare(a.date)), [animals, farmId, type, search])
+  const navItems = getVeterinaryNavItems('history', { onGoDashboard: onBack, onOpenLookup, onOpenInspectionHistory: () => {}, onGoNotBuilt: () => {} })
+  const farmName = (id) => farms.find((farm) => farm.id === id)?.name || 'Unknown farm'
+  return <DashboardShell roleLabel="VETERINARY" actorId="VT-000102" name="Dr. Achieng Otieno" navItems={navItems} onLogout={onLogout} onToggleTheme={onToggleTheme} variant="home">
+    <div className="vet-page-head"><div><p className="setup-title">Inspection History</p><p className="setup-subtitle">View all veterinary visits and inspection records.</p></div></div>
+    <div className="vet-history-filters"><input placeholder="Search animal or notes" value={search} onChange={(event) => setSearch(event.target.value)} /><select value={farmId} onChange={(event) => setFarmId(event.target.value)}><option value="">All farms</option>{farms.map((farm) => <option key={farm.id} value={farm.id}>{farm.name}</option>)}</select><select value={type} onChange={(event) => setType(event.target.value)}><option value="">All visit types</option>{['Routine Check-up', 'Vaccination', 'Disease Treatment', 'Veterinary visit'].map((item) => <option key={item}>{item}</option>)}</select></div>
+    <div className="vet-history-cards">{records.map((record, index) => <article className="vet-history-card" key={`${record.animal.id}-${record.date}-${index}`}><div><strong>{record.date}</strong><span className="mono">{record.animal.id}</span><span>{record.animal.name || record.animal.breed || 'Animal'}</span></div><div><span>{farmName(record.animal.farmId)}</span><strong>{record.type || 'Veterinary visit'}</strong><span>Dr. Achieng Otieno</span><p>{record.notes || 'No summary recorded'}</p></div><span className="vet-status-badge vet-status-healthy">{record.healthStatus || record.animal.healthStatus}</span><button className="btn btn-outline" onClick={() => setSelected(record)}>View Details</button></article>)}{records.length === 0 && <p className="vet-empty">No veterinary visits match your filters.</p>}</div>
+    {selected && <div className="vet-modal-backdrop" onClick={() => setSelected(null)}><div className="vet-modal" onClick={(event) => event.stopPropagation()}><button className="vet-modal-close" onClick={() => setSelected(null)} aria-label="Close">×</button><h2>{selected.type || 'Veterinary visit'}</h2><p className="mono">{selected.animal.id} · {selected.date}</p><div className="vet-detail-list">{Object.entries(selected).filter(([key]) => !['animal'].includes(key) && selected[key]).map(([key, value]) => <div key={key}><span>{key.replace(/[A-Z]/g, (letter) => ` ${letter}`).replace(/^./, (letter) => letter.toUpperCase())}</span><strong>{typeof value === 'object' ? JSON.stringify(value) : value}</strong></div>)}</div></div></div>}
+  </DashboardShell>
+}

@@ -1,0 +1,50 @@
+/* ---------- My Farms / My Animals grids ---------- */
+.cards-grid{
+  display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:18px;
+}
+
+/* ---------- Farm card ---------- */
+.farm-card{
+  background:var(--card-bg);border:1.5px solid var(--border-soft);border-radius:16px;
+  padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px;
+}
+.farm-card-photo{
+  width:100%;height:100px;border-radius:12px;background:var(--cream-100);
+  display:flex;align-items:center;justify-content:center;color:var(--gold-600);
+}
+.farm-card-name{
+  font-family:'Fraunces',serif;font-size:17px;font-weight:700;color:var(--maroon-800);margin:0 0 8px;
+}
+[data-theme="dark"] .farm-card-name{color:var(--gold-400);}
+.farm-card-line{
+  display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-600);margin:0 0 5px;
+}
+.farm-card-line svg{color:var(--ink-600);flex:0 0 auto;}
+.farm-card-actions{display:flex;flex-direction:column;gap:8px;margin-top:auto;}
+.farm-card-btn{
+  display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 12px;border-radius:10px;
+  font-size:12.5px;font-weight:600;transition:transform .15s ease, box-shadow .15s ease;
+}
+.farm-card-btn:hover{transform:translateY(-1px);}
+.farm-card-btn-view{background:var(--maroon-800);color:#fff;}
+.farm-card-btn-view:hover{box-shadow:0 6px 14px rgba(90,15,23,0.3);}
+.farm-card-btn-manage{background:var(--gold-600);color:var(--maroon-950);}
+.farm-card-btn-manage:hover{box-shadow:0 6px 14px rgba(184,135,58,0.35);}
+
+/* ---------- Animal card ---------- */
+.animal-card{
+  background:var(--card-bg);border:1.5px solid var(--border-soft);border-radius:14px;
+  padding:16px;box-shadow:var(--shadow);display:flex;gap:12px;align-items:flex-start;
+}
+.animal-card-photo{
+  width:52px;height:52px;border-radius:10px;background:var(--sage-100);flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;color:var(--sage-600);
+}
+.animal-card-body{min-width:0;}
+.animal-card-id{
+  font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:700;color:var(--maroon-800);
+  padding:0;text-decoration:underline;text-underline-offset:2px;
+}
+[data-theme="dark"] .animal-card-id{color:var(--gold-400);}
+.animal-card-line{font-size:12px;color:var(--ink-600);margin:4px 0 0;}
+.animal-card-farm{font-size:11px;color:var(--gold-600);margin:4px 0 0;font-weight:600;}
