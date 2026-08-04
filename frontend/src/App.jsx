@@ -14,7 +14,6 @@ import {
   getCurrentMockUser,
   clearCurrentMockUser,
 } from "./lib/mockAuth";
-import { ToastProvider } from "./components/Toast";
 
 // --- Auth & Core screens ---
 import { Intro } from "./screens/public/Intro";
@@ -294,7 +293,7 @@ function App() {
   };
 
   return (
-    <ToastProvider>
+    
       <Routes>
         <Route path="/" element={<IntroRoute />} />
         <Route path="/login" element={<LoginRoute />} />
@@ -328,7 +327,7 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </ToastProvider>
+    
   );
 }
 
