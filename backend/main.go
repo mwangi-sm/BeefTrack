@@ -6,10 +6,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/joho/godotenv"
-
+	"backend/internal/config"
 	"backend/internal/database"
 	"backend/internal/routes"
+	"backend/internal/utils"
 )
 
 // Helper to write safe, formatted JSON responses
@@ -22,9 +22,13 @@ func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
 }
 
 func main() {
-	// 1. Load environment variables from .env
-	if err := godotenv.Load(); err != nil {
-		fmt.Println("Notice: No .env file found, falling back to system environment variables.")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Invalid configuration: %v", err)
+	}
+	verifier, err := utils.NewJWKSVerifier(cfg.SupabaseJWKSURL, cfg.SupabaseIssuer)
+	if err != nil {
+		log.Fatalf("Unable to configure Supabase JWT verification: %v", err)
 	}
 
 	fmt.Println("Starting BeefTrace Backend...")
@@ -41,7 +45,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Register admin routes
-	routes.AdminRoutes(mux)
+	routes.AdminRoutes(mux, verifier)
 
 	// --- Health Check ---
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -116,8 +120,8 @@ func main() {
 		respondJSON(w, http.StatusOK, map[string]string{"status": "OK", "message": "Deleted comment by ID successfully"})
 	})
 
-	fmt.Println("Server running on http://localhost:8080")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	fmt.Printf("Server running on http://localhost:%s\n", cfg.Port)
+	if err := http.ListenAndServe(":"+cfg.Port, mux); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
 }

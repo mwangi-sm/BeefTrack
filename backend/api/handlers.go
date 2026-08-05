@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"backend/database"
+	"backend/internal/database"
 )
 
 // Server holds dependencies like the database connection

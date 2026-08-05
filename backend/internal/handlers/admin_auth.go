@@ -1,61 +1,33 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
-	"time"
 
-	"backend/internal/models"
+	"backend/internal/utils"
 )
 
-// AdminAuthHandler handles authentication-related admin endpoints
-type AdminAuthHandler struct {
-	// TODO: Inject auth service dependency here
-}
+// AdminAuthHandler retains legacy endpoint paths while authentication is moved
+// to the React client and Supabase Auth.
+type AdminAuthHandler struct{}
 
-// NewAdminAuthHandler creates a new AdminAuthHandler
 func NewAdminAuthHandler() *AdminAuthHandler {
 	return &AdminAuthHandler{}
 }
 
-// Login handles POST /api/admin/login
+// Login no longer accepts credentials or issues tokens. The React client must
+// call Supabase Auth directly and send its access token to protected APIs.
 func (h *AdminAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var creds models.AdminCredentials
-	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-		http.Error(w, `{"error":"invalid request payload"}`, http.StatusBadRequest)
-		return
-	}
-
-	if creds.Email == "" || creds.Password == "" {
-		http.Error(w, `{"error":"email and password are required"}`, http.StatusBadRequest)
-		return
-	}
-
-	// TODO: Replace with real authentication logic via the auth service
-	// For now, return a mock session token.
-	session := models.AdminSession{
-		Token:     "mock-jwt-token",
-		AdminID:   1,
-		ExpiresAt: time.Now().Add(24 * time.Hour),
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(session)
+	utils.Fail(w, http.StatusGone, "This login endpoint has been retired.", "sign in with Supabase Auth in the client and send the access token as a bearer token")
 }
 
-// Logout handles POST /api/admin/logout
+// Logout retains the route contract but does not own the Supabase session.
+// The React client must call supabase.auth.signOut().
 func (h *AdminAuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	// TODO: Invalidate the session token in the auth service
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok", "message": "Logged out successfully"})
+	utils.Success(w, http.StatusOK, "Sign out with Supabase Auth in the client.", nil)
 }
 
-// RefreshToken handles POST /api/admin/refresh
+// RefreshToken no longer accepts or creates local sessions. The React client
+// should let the Supabase client refresh its session.
 func (h *AdminAuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement token refresh logic
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok", "message": "Token refreshed"})
+	utils.Fail(w, http.StatusGone, "This refresh endpoint has been retired.", "refresh the session with Supabase Auth in the client")
 }
