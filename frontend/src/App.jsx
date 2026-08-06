@@ -236,7 +236,7 @@ function DashboardRoute({ onToggleTheme, farmerFlow, agentFlow }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (currentUser.role === "vet" || currentUser.role === "veterinary") {
+  if (currentUser.role === "veterinary_officer") {
     return <Navigate to="/veterinary" replace />;
   }
 
@@ -316,7 +316,7 @@ function VeterinaryRoute({
     return <Navigate to="/login" replace />;
   }
 
-  if (currentUser.role !== "vet" && currentUser.role !== "veterinary") {
+  if (currentUser.role !== "veterinary_officer") {
     return <Navigate to={`/dashboard/${currentUser.role || "farmer"}`} replace />;
   }
 
