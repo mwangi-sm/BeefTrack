@@ -8,13 +8,10 @@ import {
   useParams,
 } from "react-router-dom";
 import "./App.css";
-import {
-  registerMockUser,
-  setCurrentMockUser,
-} from "./lib/mockAuth";
 import { getSupabase, isEmail } from "./lib/supabase";
 import { buildSignupMetadata, SELF_SERVICE_ROLES, toAuthenticatedUser } from "./lib/authSession";
-import { SupabaseSessionProvider, useSupabaseSession } from "./context/SupabaseSessionProvider";
+import { SupabaseSessionProvider } from "./context/SupabaseSessionProvider";
+import { useSupabaseSession } from "./context/useSupabaseSession";
 
 // --- Auth & Core screens ---
 import { Intro } from "./screens/public/Intro";
@@ -179,15 +176,6 @@ function SignupRoute() {
         throw new Error("Account creation did not return a Supabase user.");
       }
 
-      registerMockUser({
-        email: formData.email,
-        phone: formData.phone,
-        role: signupRole,
-        fullname: metadata.full_name,
-        accountType: formData.accountType,
-      });
-      setCurrentMockUser(formData.email || formData.phone);
-
       if (data.session) {
         if (signupRole === "veterinary_officer") {
           navigate("/veterinary", { replace: true });
@@ -246,6 +234,14 @@ function DashboardRoute({ onToggleTheme, farmerFlow, agentFlow }) {
 
   if (!currentUser) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (currentUser.role === "vet" || currentUser.role === "veterinary") {
+    return <Navigate to="/veterinary" replace />;
+  }
+
+  if (currentUser.role && currentUser.role !== role) {
+    return <Navigate to={`/dashboard/${currentUser.role}`} replace />;
   }
 
   const handleLogout = async () => {
@@ -310,6 +306,19 @@ function VeterinaryRoute({
   onRecordTraceabilityLookup,
 }) {
   const navigate = useNavigate();
+  const { user: currentUser, checkingSession } = useSupabaseSession();
+
+  if (checkingSession) {
+    return <div style={{ padding: "80px 0", textAlign: "center" }}>Checking your session…</div>;
+  }
+
+  if (!currentUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (currentUser.role !== "vet" && currentUser.role !== "veterinary") {
+    return <Navigate to={`/dashboard/${currentUser.role || "farmer"}`} replace />;
+  }
 
   const handleLogout = async () => {
     try {
