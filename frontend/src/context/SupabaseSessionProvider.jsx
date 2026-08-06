@@ -44,6 +44,7 @@ export function SupabaseSessionProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSupabaseSession() {
   const context = useContext(SupabaseSessionContext);
   if (!context) {
