@@ -13,7 +13,7 @@ import {
   setCurrentMockUser,
 } from "./lib/mockAuth";
 import { getSupabase, isEmail } from "./lib/supabase";
-import { toAuthenticatedUser } from "./lib/authSession";
+import { buildSignupMetadata, SELF_SERVICE_ROLES, toAuthenticatedUser } from "./lib/authSession";
 import { SupabaseSessionProvider, useSupabaseSession } from "./context/SupabaseSessionProvider";
 
 // --- Auth & Core screens ---
@@ -40,6 +40,7 @@ import { ProcessorSignup } from "./signup_screens/ProcessorSignup";
 import { DistributorSignup } from "./signup_screens/DistributorSignup";
 import { RetailerSignup } from "./signup_screens/RetailerSignup";
 import { ConsumerSignup } from "./signup_screens/ConsumerSignup";
+import { BasicRoleSignup } from "./signup_screens/BasicRoleSignup";
 
 // --- Farmer / Agent flow-hook route trees, and Veterinary ---
 import { useFarmerFlow } from "./screens/farmer/services/useFarmerFlow";
@@ -67,6 +68,8 @@ const SIGNUP_SCREENS = {
   distributor: DistributorSignup,
   retailer: RetailerSignup,
   consumer: ConsumerSignup,
+  vet: (props) => <BasicRoleSignup role="vet" {...props} />,
+  trader: (props) => <BasicRoleSignup role="trader" {...props} />,
 };
 
 
@@ -74,6 +77,9 @@ const VALID_ROLES = new Set([
   ...Object.keys(DASHBOARDS),
   "farmer",
   "agent",
+  "vet",
+  "veterinary",
+  "trader",
 ]);
 
 
@@ -85,10 +91,7 @@ function IntroRoute() {
   const navigate = useNavigate();
 
   const handlePickRole = (role) => {
-    if (role.screen === "veterinary") {
-    
-      navigate("/veterinary");
-    } else if (role.screen) {
+    if (role.screen) {
       navigate(`/signup/${role.screen}`);
     } else {
       navigate(`/placeholder/${encodeURIComponent(role.name)}`);
@@ -124,6 +127,10 @@ function LoginRoute() {
         navigate("/admin", { replace: true });
         return;
       }
+      if (user.role === "vet" || user.role === "veterinary") {
+        navigate("/veterinary", { replace: true });
+        return;
+      }
       if (VALID_ROLES.has(user.role)) {
         navigate(`/dashboard/${user.role}`, { replace: true });
         return;
@@ -149,43 +156,72 @@ function LoginRoute() {
 function SignupRoute() {
   const { role } = useParams();
   const navigate = useNavigate();
+  const [signupError, setSignupError] = useState("");
   const goIntro = () => navigate("/");
   const goLogin = () => navigate("/login");
 
-  const handleSubmit = (formData) => {
-    const fullname =
-      formData.fullName ||
-      [
-        formData.firstName || formData.contactFirstName,
-        formData.lastName || formData.contactLastName,
-      ]
-        .filter(Boolean)
-        .join(" ");
+  const handleSubmit = async (formData) => {
+    setSignupError("");
+    try {
+      const signupRole = formData.role || role;
+      if (!SELF_SERVICE_ROLES.has(signupRole)) {
+        throw new Error("Choose a supported BeefTrace role before signing up.");
+      }
 
-    registerMockUser({
-      email: formData.email,
-      phone: formData.phone,
-      role,
-      fullname,
-      accountType: formData.accountType,
-    });
-    setCurrentMockUser(formData.email || formData.phone);
+      const metadata = buildSignupMetadata({ ...formData, role: signupRole });
+      const credentials = isEmail(formData.email || "")
+        ? { email: formData.email.trim(), password: formData.password }
+        : { phone: formData.phone.trim(), password: formData.password };
 
-    if (ROLES_WITH_SETUP.includes(role)) {
-      navigate(`/dashboard/${role}/setup`, { replace: true });
-    } else {
-      navigate(`/dashboard/${role}`, { replace: true });
+      const { data, error } = await getSupabase().auth.signUp({
+        ...credentials,
+        options: { data: metadata },
+      });
+      if (error) throw error;
+      if (!data.user) {
+        throw new Error("Account creation did not return a Supabase user.");
+      }
+
+      registerMockUser({
+        email: formData.email,
+        phone: formData.phone,
+        role: signupRole,
+        fullname: metadata.full_name,
+        accountType: formData.accountType,
+      });
+      setCurrentMockUser(formData.email || formData.phone);
+
+      if (data.session) {
+        if (signupRole === "vet" || signupRole === "veterinary") {
+          navigate("/veterinary", { replace: true });
+        } else if (ROLES_WITH_SETUP.includes(signupRole)) {
+          navigate(`/dashboard/${signupRole}/setup`, { replace: true });
+        } else {
+          navigate(`/dashboard/${signupRole}`, { replace: true });
+        }
+      } else {
+        navigate("/login", { replace: true });
+      }
+    } catch (error) {
+      setSignupError(error.message || "Unable to create your account. Please try again.");
     }
   };
 
   const DedicatedSignup = SIGNUP_SCREENS[role];
   if (DedicatedSignup) {
     return (
-      <DedicatedSignup
-        onBack={goIntro}
-        onSubmit={handleSubmit}
-        onLogin={goLogin}
-      />
+      <>
+        {signupError && (
+          <div style={{ maxWidth: 760, margin: "16px auto 0", padding: "10px 12px", borderRadius: 8, background: "var(--rust-50, #fdf1ec)", color: "var(--rust-600)", fontSize: 13 }}>
+            {signupError}
+          </div>
+        )}
+        <DedicatedSignup
+          onBack={goIntro}
+          onSubmit={handleSubmit}
+          onLogin={goLogin}
+        />
+      </>
     );
   }
   return <Navigate to="/" replace />;
@@ -246,6 +282,10 @@ function DashboardRoute({ onToggleTheme, farmerFlow, agentFlow }) {
         onToggleTheme={onToggleTheme}
       />
     );
+  }
+
+  if (role === "trader") {
+    return <Placeholder roleName="Trader" onBack={() => navigate("/")} />;
   }
 
   const Dashboard = DASHBOARDS[role];
