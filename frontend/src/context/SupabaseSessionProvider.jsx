@@ -1,8 +1,7 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toAuthenticatedUser } from "../lib/authSession";
 import { getSupabase } from "../lib/supabase";
-
-const SupabaseSessionContext = createContext(null);
+import { SupabaseSessionContext } from "./supabaseSessionContext";
 
 export function SupabaseSessionProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -42,13 +41,4 @@ export function SupabaseSessionProvider({ children }) {
       {children}
     </SupabaseSessionContext.Provider>
   );
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function useSupabaseSession() {
-  const context = useContext(SupabaseSessionContext);
-  if (!context) {
-    throw new Error("useSupabaseSession must be used within SupabaseSessionProvider");
-  }
-  return context;
 }
