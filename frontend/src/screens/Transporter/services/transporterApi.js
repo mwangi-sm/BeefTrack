@@ -11,6 +11,7 @@ import {
   DOCUMENTS as MOCK_DOCUMENTS,
   ANIMALS,
 } from '../data/Transporterdata'
+import { authorizedFetch } from '../../../lib/apiClient'
 
 const USE_MOCK = true
 
@@ -27,7 +28,7 @@ export async function getAssignedDeliveries() {
     await delay()
     return DELIVERIES
   }
-  const res = await fetch('/api/transporter/deliveries')
+  const res = await authorizedFetch('/api/transporter/deliveries')
   if (!res.ok) throw new Error('Failed to load assigned deliveries')
   return res.json()
 }
@@ -39,7 +40,7 @@ export async function getDeliveryById(id) {
     if (!d) throw new Error('Delivery not found')
     return d
   }
-  const res = await fetch(`/api/transporter/deliveries/${id}`)
+  const res = await authorizedFetch(`/api/transporter/deliveries/${id}`)
   if (!res.ok) throw new Error('Failed to load delivery')
   return res.json()
 }
@@ -51,7 +52,7 @@ export async function acceptDelivery(id) {
     if (d) d.status = 'accepted'
     return d
   }
-  const res = await fetch(`/api/transporter/deliveries/${id}/accept`, { method: 'POST' })
+  const res = await authorizedFetch(`/api/transporter/deliveries/${id}/accept`, { method: 'POST' })
   if (!res.ok) throw new Error('Failed to accept delivery')
   return res.json()
 }
@@ -66,7 +67,7 @@ export async function reportIssue(id, note) {
     }
     return d
   }
-  const res = await fetch(`/api/transporter/deliveries/${id}/issue`, {
+  const res = await authorizedFetch(`/api/transporter/deliveries/${id}/issue`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ note }),
@@ -85,7 +86,7 @@ export async function traceAnimal(tagId) {
     )
     return animal || null
   }
-  const res = await fetch(`/api/transporter/animals/${encodeURIComponent(tagId)}`)
+  const res = await authorizedFetch(`/api/transporter/animals/${encodeURIComponent(tagId)}`)
   if (!res.ok) throw new Error('Failed to look up animal')
   return res.json()
 }
@@ -97,7 +98,7 @@ export async function getActiveTrip() {
     await delay(200)
     return ACTIVE_TRIP
   }
-  const res = await fetch('/api/transporter/trip/active')
+  const res = await authorizedFetch('/api/transporter/trip/active')
   if (!res.ok) throw new Error('Failed to load active trip')
   return res.json()
 }
@@ -109,7 +110,7 @@ export async function startTrip(id) {
     if (d) d.status = 'in_transit'
     return d
   }
-  const res = await fetch(`/api/transporter/deliveries/${id}/start`, { method: 'POST' })
+  const res = await authorizedFetch(`/api/transporter/deliveries/${id}/start`, { method: 'POST' })
   if (!res.ok) throw new Error('Failed to start trip')
   return res.json()
 }
@@ -120,7 +121,7 @@ export async function updateTripStatus(status) {
     ACTIVE_TRIP.status = status
     return ACTIVE_TRIP
   }
-  const res = await fetch('/api/transporter/trip/status', {
+  const res = await authorizedFetch('/api/transporter/trip/status', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
@@ -136,7 +137,7 @@ export async function getDeliveryHistory() {
     await delay(250)
     return DELIVERY_HISTORY
   }
-  const res = await fetch('/api/transporter/deliveries/history')
+  const res = await authorizedFetch('/api/transporter/deliveries/history')
   if (!res.ok) throw new Error('Failed to load delivery history')
   return res.json()
 }
@@ -148,7 +149,7 @@ export async function getNotifications() {
     await delay(200)
     return MOCK_NOTIFICATIONS
   }
-  const res = await fetch('/api/transporter/notifications')
+  const res = await authorizedFetch('/api/transporter/notifications')
   if (!res.ok) throw new Error('Failed to load notifications')
   return res.json()
 }
@@ -160,7 +161,7 @@ export async function markNotificationRead(id) {
     if (n) n.unread = false
     return n
   }
-  const res = await fetch(`/api/transporter/notifications/${id}/read`, { method: 'POST' })
+  const res = await authorizedFetch(`/api/transporter/notifications/${id}/read`, { method: 'POST' })
   if (!res.ok) throw new Error('Failed to update notification')
   return res.json()
 }
@@ -172,7 +173,7 @@ export async function getProfile() {
     await delay(300)
     return { ...MOCK_PROFILE }
   }
-  const res = await fetch('/api/transporter/profile')
+  const res = await authorizedFetch('/api/transporter/profile')
   if (!res.ok) throw new Error('Failed to load profile')
   return res.json()
 }
@@ -183,7 +184,7 @@ export async function updateProfile(updates) {
     Object.assign(MOCK_PROFILE, updates)
     return { ...MOCK_PROFILE }
   }
-  const res = await fetch('/api/transporter/profile', {
+  const res = await authorizedFetch('/api/transporter/profile', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
@@ -199,7 +200,7 @@ export async function getDocuments() {
     await delay(300)
     return { ...MOCK_DOCUMENTS }
   }
-  const res = await fetch('/api/transporter/documents')
+  const res = await authorizedFetch('/api/transporter/documents')
   if (!res.ok) throw new Error('Failed to load documents')
   return res.json()
 }
@@ -216,7 +217,7 @@ export async function uploadDocument(docKey, fileData) {
     }
     return MOCK_DOCUMENTS.documents[docKey]
   }
-  const res = await fetch(`/api/transporter/documents/${docKey}`, {
+  const res = await authorizedFetch(`/api/transporter/documents/${docKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(fileData),
@@ -231,7 +232,7 @@ export async function deleteDocument(docKey) {
     delete MOCK_DOCUMENTS.documents[docKey]
     return true
   }
-  const res = await fetch(`/api/transporter/documents/${docKey}`, {
+  const res = await authorizedFetch(`/api/transporter/documents/${docKey}`, {
     method: 'DELETE',
   })
   if (!res.ok) throw new Error('Failed to delete document')

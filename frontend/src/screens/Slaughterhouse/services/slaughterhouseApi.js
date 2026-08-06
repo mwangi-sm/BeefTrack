@@ -13,13 +13,14 @@ import {
   NOTIFICATIONS,
   TRANSPORTERS,
 } from "../data/Slaughterhousedata";
+import { authorizedFetch } from "../../../lib/apiClient";
 
 function delay(ms = 350) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function requestJson(url, options) {
-  const res = await fetch(url, options);
+  const res = await authorizedFetch(url, options);
   if (!res.ok) throw new Error(`Request failed: ${url}`);
   return res.json();
 }

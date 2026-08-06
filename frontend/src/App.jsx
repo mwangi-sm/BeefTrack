@@ -11,9 +11,10 @@ import "./App.css";
 import {
   registerMockUser,
   setCurrentMockUser,
-  getCurrentMockUser,
-  clearCurrentMockUser,
 } from "./lib/mockAuth";
+import { getSupabase, isEmail } from "./lib/supabase";
+import { toAuthenticatedUser } from "./lib/authSession";
+import { SupabaseSessionProvider, useSupabaseSession } from "./context/SupabaseSessionProvider";
 
 // --- Auth & Core screens ---
 import { Intro } from "./screens/public/Intro";
@@ -105,17 +106,34 @@ function LoginRoute() {
   const navigate = useNavigate();
   const [loginError, setLoginError] = useState("");
 
-  const handleSubmit = (credentials) => {
-    const user = setCurrentMockUser(credentials.identifier);
+  const handleSubmit = async (credentials) => {
+    setLoginError("");
+    try {
+      const identifier = credentials.identifier.trim();
+      const signInCredentials = isEmail(identifier)
+        ? { email: identifier, password: credentials.password }
+        : { phone: identifier, password: credentials.password };
+      const { data, error } = await getSupabase().auth.signInWithPassword(signInCredentials);
+      if (error) throw error;
+      if (!data.user || !data.session) {
+        throw new Error("Sign-in succeeded, but no active Supabase session was returned.");
+      }
 
-    if (user && VALID_ROLES.has(user.role)) {
-      navigate(`/dashboard/${user.role}`, { replace: true });
-      return;
+      const user = toAuthenticatedUser(data.user);
+      if (user.role === "admin" || user.role === "super_admin") {
+        navigate("/admin", { replace: true });
+        return;
+      }
+      if (VALID_ROLES.has(user.role)) {
+        navigate(`/dashboard/${user.role}`, { replace: true });
+        return;
+      }
+
+      await getSupabase().auth.signOut();
+      throw new Error("Your account does not have an approved BeefTrace role.");
+    } catch (error) {
+      setLoginError(error.message || "Unable to sign in. Please check your credentials.");
     }
-
-    setLoginError(
-      "We couldn't find an account with that email or phone number.",
-    );
   };
 
   return (
@@ -187,14 +205,22 @@ function PlaceholderRoute() {
 function DashboardRoute({ onToggleTheme, farmerFlow, agentFlow }) {
   const { role } = useParams();
   const navigate = useNavigate();
-  const currentUser = getCurrentMockUser();
+  const { user: currentUser, checkingSession } = useSupabaseSession();
+
+  if (checkingSession) {
+    return <div style={{ padding: "80px 0", textAlign: "center" }}>Checking your session…</div>;
+  }
 
   if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
 
-  const handleLogout = () => {
-    clearCurrentMockUser();
+  const handleLogout = async () => {
+    try {
+      await getSupabase().auth.signOut();
+    } catch {
+      // Clear local display state even if the browser has lost connectivity.
+    }
     navigate("/", { replace: true });
   };
 
@@ -252,8 +278,12 @@ function VeterinaryRoute({
 }) {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    clearCurrentMockUser();
+  const handleLogout = async () => {
+    try {
+      await getSupabase().auth.signOut();
+    } catch {
+      // Clear local display state even if the browser has lost connectivity.
+    }
     navigate("/", { replace: true });
   };
 
@@ -294,6 +324,7 @@ function App() {
 
   return (
     
+      <SupabaseSessionProvider>
       <Routes>
         <Route path="/" element={<IntroRoute />} />
         <Route path="/login" element={<LoginRoute />} />
@@ -327,6 +358,7 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </SupabaseSessionProvider>
     
   );
 }

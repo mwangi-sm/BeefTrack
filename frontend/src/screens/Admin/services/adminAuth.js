@@ -1,53 +1,70 @@
-// Token / session persistence for the Admin Dashboard.
-// Real auth only — no mock fallback. Talks to the Go REST API via adminApi.js.
-//
-// The token lives in sessionStorage by default (cleared when the tab closes,
-// which shrinks the window for token theft via XSS). Checking "Keep me
-// signed in" on the login screen persists it to localStorage instead.
+import { getSupabase, isEmail } from "../../../lib/supabase";
 
-const TOKEN_KEY = "beef_trace_admin_token";
-const USER_KEY = "beef_trace_admin_user";
+// These keys were used by the retired backend-issued token flow. Clear them
+// defensively, but store no Supabase token ourselves.
+const LEGACY_TOKEN_KEY = "beef_trace_admin_token";
+const LEGACY_USER_KEY = "beef_trace_admin_user";
 
-function storageFor(remember) {
-  return remember ? window.localStorage : window.sessionStorage;
+function toAdmin(user) {
+  return {
+    id: user.id,
+    email: user.email || "",
+    fullname: user.user_metadata?.full_name || user.user_metadata?.fullname || user.email || "",
+    role: user.app_metadata?.role || "",
+  };
 }
 
-export function setAdminSession(token, user, remember = false) {
-  clearAdminSession();
-  const store = storageFor(remember);
-  store.setItem(TOKEN_KEY, token);
-  store.setItem(USER_KEY, JSON.stringify(user));
+function isAdminRole(role) {
+  return role === "admin" || role === "super_admin";
 }
 
-export function getAdminToken() {
-  return (
-    window.sessionStorage.getItem(TOKEN_KEY) ||
-    window.localStorage.getItem(TOKEN_KEY)
-  );
-}
-
-export function getStoredAdminUser() {
-  const raw =
-    window.sessionStorage.getItem(USER_KEY) ||
-    window.localStorage.getItem(USER_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
+export async function loginWithSupabase(identifier, password) {
+  const value = identifier.trim();
+  const credentials = isEmail(value)
+    ? { email: value, password }
+    : { phone: value, password };
+  const { data, error } = await getSupabase().auth.signInWithPassword(credentials);
+  if (error) throw error;
+  if (!data.session || !data.user) {
+    throw new Error("Sign-in succeeded, but no active Supabase session was returned.");
   }
+
+  const admin = toAdmin(data.user);
+  if (!isAdminRole(admin.role)) {
+    await getSupabase().auth.signOut();
+    throw new Error("This account does not have administrator access.");
+  }
+  return { token: data.session.access_token, user: admin };
+}
+
+export async function getAdminToken() {
+  const { data, error } = await getSupabase().auth.getSession();
+  if (error) throw error;
+  return data.session?.access_token || null;
+}
+
+export async function getStoredAdminUser() {
+  const { data, error } = await getSupabase().auth.getUser();
+  if (error || !data.user) return null;
+  const admin = toAdmin(data.user);
+  return isAdminRole(admin.role) ? admin : null;
 }
 
 export function clearAdminSession() {
-  window.sessionStorage.removeItem(TOKEN_KEY);
-  window.sessionStorage.removeItem(USER_KEY);
-  window.localStorage.removeItem(TOKEN_KEY);
-  window.localStorage.removeItem(USER_KEY);
+  window.sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+  window.sessionStorage.removeItem(LEGACY_USER_KEY);
+  window.localStorage.removeItem(LEGACY_TOKEN_KEY);
+  window.localStorage.removeItem(LEGACY_USER_KEY);
 }
 
-// Fired by adminApi.js whenever a request comes back 401, so whichever
-// AdminAuthProvider is mounted can react without adminApi.js needing to
-// import React Router or hold component state itself.
+export async function signOutAdmin() {
+  try {
+    await getSupabase().auth.signOut();
+  } finally {
+    clearAdminSession();
+  }
+}
+
 export const SESSION_EXPIRED_EVENT = "beef_trace_admin_session_expired";
 
 export function broadcastSessionExpired() {

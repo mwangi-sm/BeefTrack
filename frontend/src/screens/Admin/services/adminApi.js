@@ -6,23 +6,22 @@
 // Every consuming component talks to this file, never to fetch() directly,
 // so swapping paths/response shapes later only means editing here.
 
-import { getAdminToken, broadcastSessionExpired } from "./adminAuth";
+import { authorizedFetch } from "../../../lib/apiClient";
+import { broadcastSessionExpired, loginWithSupabase, signOutAdmin } from "./adminAuth";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL
   ? `${import.meta.env.VITE_API_BASE_URL}/api/admin`
   : "/api/admin";
 
 async function request(path, options = {}) {
-  const token = getAdminToken();
   const headers = {
     "Content-Type": "application/json",
     ...(options.headers || {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
   let res;
   try {
-    res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    res = await authorizedFetch(`${API_BASE}${path}`, { ...options, headers });
   } catch {
     throw new Error("Network error — couldn't reach the BeefTrace API.");
   }
@@ -54,24 +53,17 @@ async function request(path, options = {}) {
  * @returns {Promise<{token:string, user:{id:string, adminId:string, fullname:string, email:string, role:string}}>}
  */
 export async function loginAdmin({ identifier, password }) {
-  return request("/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ identifier, password }),
-  });
+  return loginWithSupabase(identifier, password);
 }
 
 // Verifies the current token against the server and returns the admin's
 // profile, or throws (including on an expired/invalid token).
 export async function fetchCurrentAdmin() {
-  return request("/auth/me");
+  return request("/profile");
 }
 
 export async function logoutAdmin() {
-  try {
-    await request("/auth/logout", { method: "POST" });
-  } catch {
-    // Even if the server call fails, the caller still clears local state.
-  }
+  await signOutAdmin();
 }
 
 // ─────────────────────── Dashboard overview ───────────────────────

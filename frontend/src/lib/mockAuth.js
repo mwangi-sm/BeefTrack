@@ -93,6 +93,27 @@ export function setCurrentMockUser(identifier) {
   return record;
 }
 
+// Stores only display metadata for a user that Supabase has already
+// authenticated. The Supabase client remains the sole owner of tokens.
+export function setCurrentAuthenticatedUser(user) {
+  const role = user.app_metadata?.role || user.user_metadata?.role || user.user_metadata?.requested_role;
+  const record = {
+    id: user.id,
+    identifier: user.email || user.phone || user.id,
+    email: user.email || '',
+    phone: user.phone || '',
+    role,
+    fullname: user.user_metadata?.full_name || user.user_metadata?.fullname || user.email || user.phone || '',
+  };
+
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(record));
+  } catch {
+    // The Supabase session still exists even if display metadata cannot persist.
+  }
+  return record;
+}
+
 // Returns the currently "logged in" mock user: { identifier, role,
 // fullname }, or null if nobody is logged in (e.g. dashboard URL was
 // opened directly without going through login/signup).

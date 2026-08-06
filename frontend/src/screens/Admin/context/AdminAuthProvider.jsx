@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { AdminAuthContext } from "./adminAuthContext";
 import { loginAdmin, fetchCurrentAdmin, logoutAdmin } from "../services/adminApi";
 import {
-  setAdminSession,
   getAdminToken,
   getStoredAdminUser,
   clearAdminSession,
@@ -24,7 +23,7 @@ export function AdminAuthProvider({ children }) {
     let cancelled = false;
 
     async function verify() {
-      const token = getAdminToken();
+      const token = await getAdminToken();
       if (!token) {
         if (!cancelled) setCheckingSession(false);
         return;
@@ -32,7 +31,7 @@ export function AdminAuthProvider({ children }) {
 
       // Show the last-known admin immediately so the UI doesn't flash to a
       // login screen while the session check happens in the background.
-      const cached = getStoredAdminUser();
+      const cached = await getStoredAdminUser();
       if (cached && !cancelled) setAdmin(cached);
 
       try {
@@ -60,15 +59,14 @@ export function AdminAuthProvider({ children }) {
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleExpired);
   }, [clearSession]);
 
-  async function login(identifier, password, remember = false) {
+  async function login(identifier, password) {
     const result = await loginAdmin({ identifier, password });
     if (!result?.token || !result?.user) {
       throw new Error("Unexpected response from the server.");
     }
-    if (result.user.role !== "admin") {
+    if (result.user.role !== "admin" && result.user.role !== "super_admin") {
       throw new Error("This account does not have admin access.");
     }
-    setAdminSession(result.token, result.user, remember);
     setAdmin(result.user);
     return result.user;
   }
@@ -81,7 +79,7 @@ export function AdminAuthProvider({ children }) {
   const value = {
     admin,
     isAuthenticated: !!admin,
-    isAdmin: admin?.role === "admin",
+    isAdmin: admin?.role === "admin" || admin?.role === "super_admin",
     checkingSession,
     login,
     logout,

@@ -27,7 +27,7 @@ export function AdminLogin() {
 
   function validate() {
     const e = {};
-    if (!identifier.trim()) e.identifier = "Email or admin ID is required.";
+    if (!identifier.trim()) e.identifier = "Email or phone number is required.";
     if (!password) e.password = "Password is required.";
     return e;
   }
@@ -73,11 +73,11 @@ export function AdminLogin() {
 
           <form onSubmit={handleSubmit}>
             <div className="field">
-              <label>Email or admin ID</label>
+              <label>Email or phone number</label>
               <input
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="admin@beeftrace.co.ke"
+                placeholder="admin@beeftrace.co.ke or +2547XXXXXXXX"
                 autoComplete="username"
                 autoFocus
               />

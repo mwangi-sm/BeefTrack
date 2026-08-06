@@ -3,9 +3,10 @@ package database
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	supabase "github.com/supabase-community/supabase-go"
+
+	"backend/internal/config"
 )
 
 // Animal and Organization types live in models.go — don't redeclare them here.
@@ -16,15 +17,12 @@ type DB struct {
 
 // NewDB builds the ONE Supabase client the whole backend should use.
 // Do not construct supabase.Client anywhere else — pass this *DB around instead.
-func NewDB() (*DB, error) {
-	supabaseURL := os.Getenv("SUPABASE_URL")
-	supabaseKey := os.Getenv("SUPABASE_ANON_KEY")
-
-	if supabaseURL == "" || supabaseKey == "" {
-		return nil, fmt.Errorf("SUPABASE_URL or SUPABASE_ANON_KEY environment variables are missing")
+func NewDB(cfg *config.Config) (*DB, error) {
+	if cfg == nil || cfg.SupabaseURL == "" || cfg.SupabasePublishableKey == "" {
+		return nil, fmt.Errorf("Supabase URL or publishable key is missing")
 	}
 
-	client, err := supabase.NewClient(supabaseURL, supabaseKey, nil)
+	client, err := supabase.NewClient(cfg.SupabaseURL, cfg.SupabasePublishableKey, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize supabase client: %w", err)
 	}

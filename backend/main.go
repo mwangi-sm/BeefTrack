@@ -34,7 +34,7 @@ func main() {
 	fmt.Println("Starting BeefTrace Backend...")
 
 	// 2. Initialize the ONE Supabase client for the whole backend
-	db, err := database.NewDB()
+	db, err := database.NewDB(cfg)
 	if err != nil {
 		fmt.Println("Notice:", err, "— database writes will be mocked.")
 		db = nil
