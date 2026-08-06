@@ -68,8 +68,7 @@ const SIGNUP_SCREENS = {
   distributor: DistributorSignup,
   retailer: RetailerSignup,
   consumer: ConsumerSignup,
-  vet: (props) => <BasicRoleSignup role="vet" {...props} />,
-  trader: (props) => <BasicRoleSignup role="trader" {...props} />,
+  veterinary_officer: (props) => <BasicRoleSignup role="veterinary_officer" {...props} />,
 };
 
 
@@ -77,9 +76,7 @@ const VALID_ROLES = new Set([
   ...Object.keys(DASHBOARDS),
   "farmer",
   "agent",
-  "vet",
-  "veterinary",
-  "trader",
+  "veterinary_officer",
 ]);
 
 
@@ -127,7 +124,7 @@ function LoginRoute() {
         navigate("/admin", { replace: true });
         return;
       }
-      if (user.role === "vet" || user.role === "veterinary") {
+      if (user.role === "veterinary_officer") {
         navigate("/veterinary", { replace: true });
         return;
       }
@@ -192,7 +189,7 @@ function SignupRoute() {
       setCurrentMockUser(formData.email || formData.phone);
 
       if (data.session) {
-        if (signupRole === "vet" || signupRole === "veterinary") {
+        if (signupRole === "veterinary_officer") {
           navigate("/veterinary", { replace: true });
         } else if (ROLES_WITH_SETUP.includes(signupRole)) {
           navigate(`/dashboard/${signupRole}/setup`, { replace: true });
@@ -282,10 +279,6 @@ function DashboardRoute({ onToggleTheme, farmerFlow, agentFlow }) {
         onToggleTheme={onToggleTheme}
       />
     );
-  }
-
-  if (role === "trader") {
-    return <Placeholder roleName="Trader" onBack={() => navigate("/")} />;
   }
 
   const Dashboard = DASHBOARDS[role];

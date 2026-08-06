@@ -4,19 +4,12 @@ import { FieldError, PasswordField, SignupShell, NameFields } from './SignupKit'
 import { EMAIL_RE, PHONE_RE } from './signupConstants'
 
 const ROLE_COPY = {
-  vet: {
+  veterinary_officer: {
     badgeLabel: 'Vet',
     title: 'Create your vet account',
     subtitle: 'Start exploring BeefTrace veterinary workflows. Licence verification can be completed later.',
     button: 'Create vet account',
     icon: IconPaths.health,
-  },
-  trader: {
-    badgeLabel: 'Trader',
-    title: 'Create your trader account',
-    subtitle: 'Start exploring BeefTrace trading workflows. Verification is required before regulated transactions.',
-    button: 'Create trader account',
-    icon: IconPaths.profile,
   },
 }
 
@@ -30,7 +23,7 @@ const initialState = {
 }
 
 export function BasicRoleSignup({ role, onSubmit = () => {}, onBack = () => {}, onLogin = () => {} }) {
-  const copy = ROLE_COPY[role] || ROLE_COPY.trader
+  const copy = ROLE_COPY[role] || ROLE_COPY.veterinary_officer
   const [form, setForm] = useState(initialState)
   const [errors, setErrors] = useState({})
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))

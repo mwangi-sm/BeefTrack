@@ -2,14 +2,12 @@ const RESERVED_ROLES = new Set(["admin", "super_admin"]);
 
 export const SELF_SERVICE_ROLES = new Set([
   "farmer",
-  "vet",
-  "veterinary",
+  "veterinary_officer",
   "agent",
   "transporter",
   "slaughterhouse",
   "processor",
   "distributor",
-  "trader",
   "retailer",
   "consumer",
 ]);

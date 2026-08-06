@@ -11,7 +11,7 @@ export const roles = [
   {
     name: 'Vet',
     desc: 'Inspect and treat animals, record visits and vaccinations directly against a farmer\'s animal records.',
-    screen: 'vet',
+    screen: 'veterinary_officer',
     icon: (
       <>
         <path d="M12 21s-7-4.5-7-10a4.9 4.9 0 018.5-3.3A4.9 4.9 0 0119 8c0 5.5-7 13-7 13z" />
@@ -75,17 +75,6 @@ export const roles = [
     ),
   },
 
-  {
-    name: 'Trader',
-    desc: 'Trade animals across the supply chain, manage offers, and complete verified transactions.',
-    screen: 'trader',
-    icon: (
-      <>
-        <path d="M7 7h10M7 12h10M7 17h6" />
-        <path d="M4 4h16v16H4z" />
-      </>
-    ),
-  },
   {
     name: 'Retailer',
     desc: 'Verify incoming batches, manage shelf stock, present traceable product to shoppers.',
