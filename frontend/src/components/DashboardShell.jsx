@@ -31,9 +31,7 @@ export function DashboardShell({
     setDrawerOpen(false);
   };
 
-  // Shared "toggle" behavior for the topbar bell and profile buttons: if
-  // you're already on that sub-page, clicking again takes you back to the
-  // dashboard home instead of just re-navigating to the same place.
+
   function toggleTo(subPath) {
     const base = basePathFor(navItems);
     const target = `${base}${subPath}`;
@@ -140,10 +138,6 @@ export function DashboardShell({
         </div>
       </div>
 
-      <button type="button" className="back-link" onClick={() => navigate(-1)}>
-        <Icon>{IconPaths.arrowLeft}</Icon>
-        Back
-      </button>
 
       <div className="dash-body">{children}</div>
     </>

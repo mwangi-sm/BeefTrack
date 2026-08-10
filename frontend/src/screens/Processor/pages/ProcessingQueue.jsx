@@ -1,35 +1,37 @@
+import { useNavigate } from 'react-router-dom'
 import { Panel } from '../../../components/DashboardBits'
 import { useProcessorData } from '../context/useProcessorData'
 
 const STATUS_LABELS = {
   ready: { label: 'Ready', action: 'Start' },
   inspection: { label: 'Inspection', action: 'Continue' },
-  packaging: { label: 'Packaging', action: 'View' },
 }
 
 /**
- * Incoming Processing Queue table. Reads carcasses straight from context;
- * the action button advances a carcass through ready -> inspection ->
- * packaging, matching the workflow diagram in the layout doc.
+ * Incoming Processing Queue preview on the processor dashboard.
+ * Carcasses that have moved to "packaging" are hidden here — they only
+ * show up on the full processing queue page. Clicking "Start"/"Continue"
+ * or "View all" navigates to that page, where the actual status change
+ * (with confirmation) happens.
  */
 export function ProcessingQueue() {
-  const { carcasses, updateCarcassStatus } = useProcessorData()
+  const { carcasses } = useProcessorData()
+  const navigate = useNavigate()
 
-  const handleAction = (carcass) => {
-    // TODO: once inspection/cutting screens exist, this should navigate
-    // there instead of just advancing status in place.
-    if (carcass.status === 'ready') {
-      updateCarcassStatus(carcass.id, 'inspection')
-    } else if (carcass.status === 'inspection') {
-      updateCarcassStatus(carcass.id, 'packaging')
-    }
-    // 'packaging' status action is "View" — no state change, just navigation
-    // once a batch detail screen exists.
-  }
+  const visibleCarcasses = carcasses.filter((c) => c.status !== 'packaging')
+
+  const goToQueue = () => navigate('/dashboard/processor/queue')
 
   return (
-    <Panel title="Incoming processing queue" action={<a href="#" className="link">View all</a>}>
-      {carcasses.length === 0 ? (
+    <Panel
+      title="Incoming processing queue"
+      action={
+        <a href="#" className="link" onClick={(e) => { e.preventDefault(); goToQueue() }}>
+          View all
+        </a>
+      }
+    >
+      {visibleCarcasses.length === 0 ? (
         <p className="empty-state">No carcasses in the queue yet.</p>
       ) : (
         <table className="pq-table">
@@ -44,7 +46,7 @@ export function ProcessingQueue() {
             </tr>
           </thead>
           <tbody>
-            {carcasses.map((c) => {
+            {visibleCarcasses.map((c) => {
               const meta = STATUS_LABELS[c.status] || { label: c.status, action: 'View' }
               return (
                 <tr key={c.id}>
@@ -56,7 +58,7 @@ export function ProcessingQueue() {
                     <span className={`pq-status pq-status-${c.status}`}>{meta.label}</span>
                   </td>
                   <td>
-                    <button className="btn btn-outline btn-sm" onClick={() => handleAction(c)}>
+                    <button className="btn btn-outline btn-sm" onClick={goToQueue}>
                       {meta.action}
                     </button>
                   </td>
