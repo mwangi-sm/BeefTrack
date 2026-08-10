@@ -1,0 +1,21 @@
+below is a curl script for testing the api for inserting farmer data
+
+curl -X POST http://localhost:8080/api/farmers -H "Content-Type: application/json" -d '{
+    "gender": "Male",
+"date_of_birth": "1980-05-14",
+"national_id_number": "ID-12345678",
+"farm_reg_no": "FARM-001",
+"country": "Kenya",
+"county": "Nairobi",
+"gps_location": "-1.286389, 36.817223"
+}'
+
+
+
+======================================================
+below is a curl script for testing the api for fetching all farmer data
+
+curl -X GET http://localhost:8080/api/farmers
+
+you could also navigate to localhost:8080/api/farmers to test this api
+

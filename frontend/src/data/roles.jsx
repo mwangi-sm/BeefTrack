@@ -9,7 +9,7 @@ export const roles = [
     ),
   },
   {
-    name: 'Vet',
+    name: 'Veterinary',
     desc: 'Inspect and treat animals, record visits and vaccinations directly against a farmer\'s animal records.',
     screen: 'veterinary_officer',
     icon: (

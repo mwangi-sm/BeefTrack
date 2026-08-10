@@ -22,7 +22,8 @@ import { AdminApp } from "./screens/Admin/AdminApp";
 // --- Dashboards owned by roles without custom flow state ---
 import { TransporterDashboard } from "./screens/Transporter/pages/TransporterDashboard";
 import { SlaughterhouseDashboard } from "./screens/Slaughterhouse/pages/SlaughterhouseDashboard";
-import { ProcessorDashboard } from "./screens/Processor/ProcessorDashboard";
+import { ProcessorDashboard } from "./screens/Processor/pages/ProcessorDashboard";
+import { ProcessorDataProvider } from "./screens/Processor/context/ProcessorDataContext";
 import { DistributorDashboard } from "./screens/Distributor/pages/DistributorDashboard";
 import { DistributorDataProvider } from "./screens/Distributor/context/DistributorDataContext";
 import { RetailerDashboard } from "./screens/Retailer/RetailerDashboard";
@@ -292,6 +293,15 @@ function DashboardRoute({ onToggleTheme, farmerFlow, agentFlow }) {
   if (role === "distributor") {
     return (
       <DistributorDataProvider>{dashboardContent}</DistributorDataProvider>
+    );
+  }
+
+  // ProcessorDashboard depends on ProcessorDataProvider context.
+  if (role === 'processor') {
+    return (
+      <ProcessorDataProvider>
+        {dashboardContent}
+      </ProcessorDataProvider>
     );
   }
 

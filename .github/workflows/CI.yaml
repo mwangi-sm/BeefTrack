@@ -1,0 +1,99 @@
+name: Backend-bt CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'docker-compose.yml'
+            frontend:
+              - 'frontend/**'
+              - 'docker-compose.yml'
+
+  backend-ci:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Lint Backend
+        run: |
+          go vet ./...
+
+      - name: Build Go Binary
+        run: go build -o backend-bt .
+
+      - name: Test Binary Execution (Smoke Test)
+        run: |
+          ./backend-bt &
+          PID=$!
+          sleep 3 #
+          if kill -0 $PID 2>/dev/null; then
+            echo "Success: Binary is running cleanly."
+            kill $PID # Clean up the process
+          else
+            echo "Error: Binary crashed immediately upon execution."
+            exit 1
+          fi
+
+      - name: Build Backend Docker Image
+        run: docker build -t backend:test .
+
+
+  frontend-ci:
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint Frontend
+        run: npm run lint --if-present
+
+      - name: Build Frontend React App
+        run: npm run build
+
+      - name: Build Frontend Docker Image
+        run: docker build -t frontend:test .
