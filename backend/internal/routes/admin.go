@@ -27,7 +27,14 @@ func AdminRoutes(mux *http.ServeMux, verifier *utils.JWKSVerifier) {
 
 	mux.Handle("POST /api/admin/logout", requireAdmin(http.HandlerFunc(authHandler.Logout)))
 	mux.Handle("GET /api/admin/dashboard/stats", requireAdmin(http.HandlerFunc(dashboardHandler.GetStats)))
+	mux.Handle("GET /api/admin/dashboard/users-summary", requireAdmin(http.HandlerFunc(dashboardHandler.GetUserSummary)))
+	mux.Handle("GET /api/admin/dashboard/traceability-summary", requireAdmin(http.HandlerFunc(dashboardHandler.GetTraceabilitySummary)))
+	mux.Handle("GET /api/admin/dashboard/charts", requireAdmin(http.HandlerFunc(dashboardHandler.GetCharts)))
 	mux.Handle("GET /api/admin/dashboard/activity", requireAdmin(http.HandlerFunc(dashboardHandler.GetRecentActivity)))
+	mux.Handle("GET /api/admin/approvals", requireAdmin(http.HandlerFunc(dashboardHandler.GetPendingApprovals)))
+	mux.Handle("GET /api/admin/users", requireAdmin(http.HandlerFunc(dashboardHandler.GetRecentRegistrations)))
+	mux.Handle("GET /api/admin/activity", requireAdmin(http.HandlerFunc(dashboardHandler.GetRecentActivity)))
+	mux.Handle("GET /api/admin/alerts", requireAdmin(http.HandlerFunc(dashboardHandler.GetSystemAlerts)))
 	mux.Handle("GET /api/admin/profile", requireAdmin(http.HandlerFunc(dashboardHandler.GetAdminProfile)))
 	mux.Handle("GET /api/admin/settings", requireSuperAdmin(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		utils.Success(w, http.StatusOK, "Admin settings retrieved", nil)

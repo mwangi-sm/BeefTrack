@@ -3,9 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
-	"backend/internal/models"
 	"backend/internal/types"
 )
 
@@ -15,52 +13,158 @@ func NewAdminDashboardHandler() *AdminDashboardHandler {
 	return &AdminDashboardHandler{}
 }
 
+type AdminUserSummary struct {
+	TotalUsers           int64 `json:"totalUsers"`
+	ActiveUsers          int64 `json:"activeUsers"`
+	SuspendedUsers       int64 `json:"suspendedUsers"`
+	LockedUsers          int64 `json:"lockedUsers"`
+	TotalFarmers         int64 `json:"totalFarmers"`
+	TotalVets            int64 `json:"totalVets"`
+	TotalAgents          int64 `json:"totalAgents"`
+	TotalTransporters    int64 `json:"totalTransporters"`
+	TotalSlaughterhouses int64 `json:"totalSlaughterhouses"`
+	TotalProcessors      int64 `json:"totalProcessors"`
+	TotalDistributors    int64 `json:"totalDistributors"`
+	TotalTraders         int64 `json:"totalTraders"`
+	TotalRetailers       int64 `json:"totalRetailers"`
+	TotalConsumers       int64 `json:"totalConsumers"`
+}
+
+type AdminTraceabilitySummary struct {
+	TotalOrganizations          int64 `json:"totalOrganizations"`
+	AnimalsRegistered           int64 `json:"animalsRegistered"`
+	AnimalsActive               int64 `json:"animalsActive"`
+	LivestockMovements          int64 `json:"livestockMovements"`
+	ActiveTransportTrips        int64 `json:"activeTransportTrips"`
+	SlaughterRecords            int64 `json:"slaughterRecords"`
+	ProcessingBatches           int64 `json:"processingBatches"`
+	DistributionShipments       int64 `json:"distributionShipments"`
+	ConsumerQrScans             int64 `json:"consumerQrScans"`
+	PendingVerificationRequests int64 `json:"pendingVerificationRequests"`
+	ActiveAlerts                int64 `json:"activeAlerts"`
+	TraceabilityGaps            int64 `json:"traceabilityGaps"`
+	DiseaseReports              int64 `json:"diseaseReports"`
+}
+
+type ChartPoint struct {
+	Date  string `json:"date"`
+	Count int64  `json:"count"`
+}
+
+type NamedMetric struct {
+	Name  string `json:"name"`
+	Value int64  `json:"value"`
+}
+
+type AdminDashboardCharts struct {
+	RegistrationsTrend        []ChartPoint  `json:"registrationsTrend"`
+	RoleBreakdown             []NamedMetric `json:"roleBreakdown"`
+	AccountStatusBreakdown    []NamedMetric `json:"accountStatusBreakdown"`
+	AnimalsRegisteredTrend    []ChartPoint  `json:"animalsRegisteredTrend"`
+	TraceabilityActivityTrend []ChartPoint  `json:"traceabilityActivityTrend"`
+	ComplianceBreakdown       []NamedMetric `json:"complianceBreakdown"`
+	DiseaseReportsTrend       []ChartPoint  `json:"diseaseReportsTrend"`
+	DiseaseCasesByLocation    []NamedMetric `json:"diseaseCasesByLocation"`
+}
+
 func (h *AdminDashboardHandler) GetStats(w http.ResponseWriter, r *http.Request) {
-	if _, ok := types.AuthClaimsFromContext(r.Context()); !ok {
-		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+	if _, ok := requireAdminClaims(w, r); !ok {
 		return
 	}
 
-	stats := models.DashboardStats{
-		TotalAnimals:       1250,
-		TotalOrganizations: 48,
-		TotalUsers:         320,
-		TotalTransactions:  845,
-		ActiveAnimals:      980,
-		PendingApprovals:   12,
-	}
+	writeAdminJSON(w, http.StatusOK, map[string]interface{}{
+		"users":        AdminUserSummary{},
+		"traceability": AdminTraceabilitySummary{},
+		"dataStatus":   "No aggregate data source is wired for this legacy endpoint yet.",
+	})
+}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(stats)
+func (h *AdminDashboardHandler) GetUserSummary(w http.ResponseWriter, r *http.Request) {
+	if _, ok := requireAdminClaims(w, r); !ok {
+		return
+	}
+	writeAdminJSON(w, http.StatusOK, AdminUserSummary{})
+}
+
+func (h *AdminDashboardHandler) GetTraceabilitySummary(w http.ResponseWriter, r *http.Request) {
+	if _, ok := requireAdminClaims(w, r); !ok {
+		return
+	}
+	writeAdminJSON(w, http.StatusOK, AdminTraceabilitySummary{})
+}
+
+func (h *AdminDashboardHandler) GetCharts(w http.ResponseWriter, r *http.Request) {
+	if _, ok := requireAdminClaims(w, r); !ok {
+		return
+	}
+	writeAdminJSON(w, http.StatusOK, AdminDashboardCharts{
+		RegistrationsTrend:        []ChartPoint{},
+		RoleBreakdown:             []NamedMetric{},
+		AccountStatusBreakdown:    []NamedMetric{},
+		AnimalsRegisteredTrend:    []ChartPoint{},
+		TraceabilityActivityTrend: []ChartPoint{},
+		ComplianceBreakdown:       []NamedMetric{},
+		DiseaseReportsTrend:       []ChartPoint{},
+		DiseaseCasesByLocation:    []NamedMetric{},
+	})
 }
 
 func (h *AdminDashboardHandler) GetRecentActivity(w http.ResponseWriter, r *http.Request) {
-	activity := []map[string]interface{}{
-		{"id": 1, "type": "animal_registered", "message": "New animal registered with tag XYZ123", "created_at": time.Now().Add(-2 * time.Hour)},
-		{"id": 2, "type": "organization_created", "message": "New slaughterhouse added to the network", "created_at": time.Now().Add(-5 * time.Hour)},
+	if _, ok := requireAdminClaims(w, r); !ok {
+		return
 	}
+	writeAdminJSON(w, http.StatusOK, []map[string]interface{}{})
+}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(activity)
+func (h *AdminDashboardHandler) GetPendingApprovals(w http.ResponseWriter, r *http.Request) {
+	if _, ok := requireAdminClaims(w, r); !ok {
+		return
+	}
+	writeAdminJSON(w, http.StatusOK, []map[string]interface{}{})
+}
+
+func (h *AdminDashboardHandler) GetRecentRegistrations(w http.ResponseWriter, r *http.Request) {
+	if _, ok := requireAdminClaims(w, r); !ok {
+		return
+	}
+	writeAdminJSON(w, http.StatusOK, []map[string]interface{}{})
+}
+
+func (h *AdminDashboardHandler) GetSystemAlerts(w http.ResponseWriter, r *http.Request) {
+	if _, ok := requireAdminClaims(w, r); !ok {
+		return
+	}
+	writeAdminJSON(w, http.StatusOK, []map[string]interface{}{})
 }
 
 func (h *AdminDashboardHandler) GetAdminProfile(w http.ResponseWriter, r *http.Request) {
-	claims, ok := types.AuthClaimsFromContext(r.Context())
+	claims, ok := requireAdminClaims(w, r)
 	if !ok {
-		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
 		return
 	}
 
 	profile := map[string]interface{}{
 		"id":        claims.Subject,
+		"adminId":   claims.Subject,
 		"email":     claims.Email,
 		"role":      claims.AppMetadata.Role,
 		"is_active": true,
 		"source":    "supabase_auth",
 	}
+	writeAdminJSON(w, http.StatusOK, profile)
+}
+
+func requireAdminClaims(w http.ResponseWriter, r *http.Request) (*types.SupabaseClaims, bool) {
+	claims, ok := types.AuthClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return nil, false
+	}
+	return claims, true
+}
+
+func writeAdminJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(profile)
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(payload)
 }
