@@ -38,32 +38,24 @@ import {
 import { useAdminAuth } from "../context/useAdminAuth";
 
 const USER_STAT_DEFS = [
-  { key: "totalUsers", label: "Total registered users", icon: IconPaths.profile },
-  { key: "activeUsers", label: "Active users", icon: IconPaths.check },
-  { key: "suspendedUsers", label: "Suspended users", icon: IconPaths.alert },
-  { key: "lockedUsers", label: "Locked users", icon: IconPaths.lock },
+  { key: "totalUsers", label: "Total users", icon: IconPaths.profile },
   { key: "totalFarmers", label: "Farmers", icon: IconPaths.farm },
-  { key: "totalVets", label: "Veterinary officers", icon: IconPaths.health },
-  { key: "totalAgents", label: "Livestock agents", icon: IconPaths.sales },
-  { key: "totalTransporters", label: "Transporters", icon: IconPaths.truck },
   { key: "totalSlaughterhouses", label: "Slaughterhouses", icon: IconPaths.abattoir },
-  { key: "totalProcessors", label: "Processors", icon: IconPaths.cut },
+  { key: "totalSlaughterhouseOfficers", label: "Slaughterhouse officers", icon: IconPaths.health },
+  { key: "totalTransporters", label: "Transporters", icon: IconPaths.truck },
   { key: "totalDistributors", label: "Distributors", icon: IconPaths.warehouse },
+  { key: "totalProcessors", label: "Processors", icon: IconPaths.cut },
   { key: "totalRetailers", label: "Retailers", icon: IconPaths.storefront },
 ];
 
 const TRACE_STAT_DEFS = [
-  { key: "totalOrganizations", label: "Total organizations", icon: IconPaths.warehouse },
-  { key: "animalsRegistered", label: "Registered animals", icon: IconPaths.animal },
-  { key: "activeTransportTrips", label: "Active transport trips", icon: IconPaths.truck },
-  { key: "slaughterRecords", label: "Slaughter records", icon: IconPaths.abattoir },
-  { key: "processingBatches", label: "Processing batches", icon: IconPaths.boxes },
-  { key: "distributionShipments", label: "Distribution shipments", icon: IconPaths.route },
-  { key: "consumerQrScans", label: "Consumer QR scans", icon: IconPaths.qr },
-  { key: "pendingVerificationRequests", label: "Pending verifications", icon: IconPaths.document },
-  { key: "activeAlerts", label: "Active alerts", icon: IconPaths.alert },
-  { key: "traceabilityGaps", label: "Traceability gaps", icon: IconPaths.search },
-  { key: "diseaseReports", label: "Disease reports", icon: IconPaths.health },
+  { key: "animalsRegistered", label: "Animals registered", icon: IconPaths.animal },
+  { key: "animalsActive", label: "Animals active", icon: IconPaths.check },
+  { key: "animalsTransported", label: "Animals transported", icon: IconPaths.truck },
+  { key: "animalsSlaughtered", label: "Animals slaughtered", icon: IconPaths.abattoir },
+  { key: "carcassRecords", label: "Carcass records", icon: IconPaths.cut },
+  { key: "meatBatches", label: "Meat batches", icon: IconPaths.boxes },
+  { key: "completedChains", label: "Completed traceability chains", icon: IconPaths.qr },
 ];
 
 const PIE_COLORS = [
@@ -147,7 +139,7 @@ export function DashboardOverview() {
       <DashHead
         greeting="Admin control panel"
         title={`Welcome back${admin?.fullname ? `, ${admin.fullname}` : ""}`}
-        subtitle="System-wide governance and monitoring across BeefTrace without placing administrators in the physical supply chain."
+        subtitle="System-wide analytics across every stakeholder in the BeefTrace chain."
         actions={
           <button className="btn btn-outline" onClick={handleRefreshAll}>
             Refresh all
@@ -172,17 +164,8 @@ export function DashboardOverview() {
         onRetry={reloadTrace}
       />
 
-      <Panel title="Data availability">
-        <p style={{ fontSize: 13.5, color: "var(--ink-600)", margin: 0 }}>
-          Phase 1 is wired to protected Admin API endpoints and intentionally renders zero/empty states until
-          aggregate data sources are connected. Required future data sources include profiles/account status,
-          organizations, animal events, transport trips, slaughter records, product batches, distribution shipments,
-          QR scan analytics, verification requests, compliance issues, audit events, and disease reports.
-        </p>
-      </Panel>
-
       <div className="grid-2col">
-        <Panel title="New registrations over time">
+        <Panel title="Registrations trend">
           {chartsLoading && <LoadingState label="Loading chart data…" />}
           {!chartsLoading && chartsError && (
             <ErrorState message="Couldn't load registration trends." onRetry={reloadCharts} />
@@ -222,50 +205,6 @@ export function DashboardOverview() {
                 <Tooltip contentStyle={chartTooltipStyle} />
                 <Legend wrapperStyle={{ fontSize: 11.5 }} />
               </PieChart>
-            </ResponsiveContainer>
-          )}
-        </Panel>
-      </div>
-
-      <div className="grid-2col">
-        <Panel title="Traceability activity over time">
-          {chartsLoading && <LoadingState label="Loading traceability trends…" />}
-          {!chartsLoading && chartsError && (
-            <ErrorState message="Couldn't load traceability trends." onRetry={reloadCharts} />
-          )}
-          {!chartsLoading && !chartsError && (!charts?.traceabilityActivityTrend || charts.traceabilityActivityTrend.length === 0) && (
-            <EmptyState icon={IconPaths.search} title="Traceability trend API is ready" subtitle="No movement, slaughter, processing, distribution, or QR analytics aggregates are available yet." />
-          )}
-          {!chartsLoading && !chartsError && charts?.traceabilityActivityTrend?.length > 0 && (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={charts.traceabilityActivityTrend}>
-                <CartesianGrid stroke="var(--border-soft)" vertical={false} />
-                <XAxis dataKey="date" stroke="var(--ink-600)" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--ink-600)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={chartTooltipStyle} />
-                <Bar dataKey="count" fill="var(--sage-600)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </Panel>
-
-        <Panel title="Disease surveillance">
-          {chartsLoading && <LoadingState label="Loading disease surveillance…" />}
-          {!chartsLoading && chartsError && (
-            <ErrorState message="Couldn't load disease surveillance." onRetry={reloadCharts} />
-          )}
-          {!chartsLoading && !chartsError && (!charts?.diseaseReportsTrend || charts.diseaseReportsTrend.length === 0) && (
-            <EmptyState icon={IconPaths.health} title="No disease surveillance aggregates" subtitle="Connect disease report and case-location APIs when the data model is available." />
-          )}
-          {!chartsLoading && !chartsError && charts?.diseaseReportsTrend?.length > 0 && (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={charts.diseaseReportsTrend}>
-                <CartesianGrid stroke="var(--border-soft)" vertical={false} />
-                <XAxis dataKey="date" stroke="var(--ink-600)" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--ink-600)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={chartTooltipStyle} />
-                <Bar dataKey="count" fill="var(--rust-600)" radius={[4, 4, 0, 0]} />
-              </BarChart>
             </ResponsiveContainer>
           )}
         </Panel>

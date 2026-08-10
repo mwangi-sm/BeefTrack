@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  
   Routes,
   Route,
   Navigate,
@@ -375,7 +374,6 @@ function App() {
   };
 
   return (
-    
       <SupabaseSessionProvider>
       <Routes>
         <Route path="/" element={<IntroRoute />} />
@@ -411,7 +409,6 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </SupabaseSessionProvider>
-    
   );
 }
 
