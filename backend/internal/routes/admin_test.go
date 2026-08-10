@@ -14,15 +14,20 @@ func TestAdminProtectedRoutesRequireBearerToken(t *testing.T) {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
-	AdminRoutes(mux, verifier)
+	AdminRoutes(mux, verifier, nil)
 
 	protected := []struct {
 		method string
 		path   string
 	}{
 		{method: http.MethodPost, path: "/api/admin/logout"},
-		{method: http.MethodGet, path: "/api/admin/dashboard/stats"},
-		{method: http.MethodGet, path: "/api/admin/dashboard/activity"},
+		{method: http.MethodGet, path: "/api/admin/dashboard/users-summary"},
+		{method: http.MethodGet, path: "/api/admin/dashboard/traceability-summary"},
+		{method: http.MethodGet, path: "/api/admin/dashboard/charts"},
+		{method: http.MethodGet, path: "/api/admin/approvals"},
+		{method: http.MethodGet, path: "/api/admin/users"},
+		{method: http.MethodGet, path: "/api/admin/activity"},
+		{method: http.MethodGet, path: "/api/admin/alerts"},
 		{method: http.MethodGet, path: "/api/admin/profile"},
 		{method: http.MethodGet, path: "/api/admin/settings"},
 	}

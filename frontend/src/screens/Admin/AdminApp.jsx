@@ -19,7 +19,7 @@ export function AdminApp({ onToggleTheme }) {
       <Routes>
         <Route path="login" element={<AdminLogin />} />
         <Route
-          path="/*"
+          path="*"
           element={
             <AdminProtectedRoute>
               <AdminDashboard onToggleTheme={onToggleTheme} />
