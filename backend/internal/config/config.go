@@ -12,7 +12,7 @@ import (
 type Config struct {
 	Port                   string
 	SupabaseURL            string
-	SupabasePublishableKey string
+	SupabaseKey string
 	SupabaseIssuer         string
 	SupabaseJWKSURL        string
 	AllowedOrigins         []string
@@ -29,7 +29,7 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Port:                   getEnv("PORT", "8080"),
 		SupabaseURL:            supabaseURL,
-		SupabasePublishableKey: getEnv("SUPABASE_PUBLISHABLE_KEY", ""),
+		SupabaseKey:            getEnv("SUPABASE_KEY", ""),
 		SupabaseIssuer:         getEnv("SUPABASE_JWT_ISSUER", supabaseURL+"/auth/v1"),
 		SupabaseJWKSURL:        getEnv("SUPABASE_JWKS_URL", supabaseURL+"/auth/v1/.well-known/jwks.json"),
 		AllowedOrigins:         splitAndTrim(getEnv("ALLOWED_ORIGINS", "*")),
@@ -37,8 +37,8 @@ func Load() (*Config, error) {
 	if cfg.SupabaseURL == "" {
 		return nil, fmt.Errorf("missing required environment variable: SUPABASE_URL")
 	}
-	if cfg.SupabasePublishableKey == "" {
-		return nil, fmt.Errorf("missing required environment variable: SUPABASE_PUBLISHABLE_KEY")
+	if cfg.SupabaseKey == "" {
+		return nil, fmt.Errorf("missing required environment variable: SUPABASE_KEY")
 	}
 	return cfg, nil
 }

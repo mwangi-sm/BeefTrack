@@ -3,57 +3,47 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
+	"time"
 
-	"backend/internal/services"
+	"backend/internal/models"
 	"backend/internal/types"
 )
 
-type AdminDashboardHandler struct {
-	service *services.AdminService
+type AdminDashboardHandler struct{}
+
+func NewAdminDashboardHandler() *AdminDashboardHandler {
+	return &AdminDashboardHandler{}
 }
 
-func NewAdminDashboardHandler(service *services.AdminService) *AdminDashboardHandler {
-	return &AdminDashboardHandler{service: service}
-}
-
-func (h *AdminDashboardHandler) writeServiceResponse(w http.ResponseWriter, data any, err error) {
-	w.Header().Set("Content-Type", "application/json")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+func (h *AdminDashboardHandler) GetStats(w http.ResponseWriter, r *http.Request) {
+	if _, ok := types.AuthClaimsFromContext(r.Context()); !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
 		return
 	}
+
+	stats := models.DashboardStats{
+		TotalAnimals:       1250,
+		TotalOrganizations: 48,
+		TotalUsers:         320,
+		TotalTransactions:  845,
+		ActiveAnimals:      980,
+		PendingApprovals:   12,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(data)
-}
-
-func (h *AdminDashboardHandler) GetUserSummary(w http.ResponseWriter, r *http.Request) {
-	h.writeServiceResponse(w, h.service.GetUserSummary())
-}
-
-func (h *AdminDashboardHandler) GetTraceabilitySummary(w http.ResponseWriter, r *http.Request) {
-	h.writeServiceResponse(w, h.service.GetTraceabilitySummary())
-}
-
-func (h *AdminDashboardHandler) GetCharts(w http.ResponseWriter, r *http.Request) {
-	h.writeServiceResponse(w, h.service.GetDashboardCharts())
-}
-
-func (h *AdminDashboardHandler) GetPendingApprovals(w http.ResponseWriter, r *http.Request) {
-	h.writeServiceResponse(w, h.service.GetPendingApprovals(limitFromQuery(r, 5)))
-}
-
-func (h *AdminDashboardHandler) GetRecentRegistrations(w http.ResponseWriter, r *http.Request) {
-	h.writeServiceResponse(w, h.service.GetRecentRegistrations(limitFromQuery(r, 5)))
+	_ = json.NewEncoder(w).Encode(stats)
 }
 
 func (h *AdminDashboardHandler) GetRecentActivity(w http.ResponseWriter, r *http.Request) {
-	h.writeServiceResponse(w, h.service.GetActivity(limitFromQuery(r, 8)))
-}
+	activity := []map[string]interface{}{
+		{"id": 1, "type": "animal_registered", "message": "New animal registered with tag XYZ123", "created_at": time.Now().Add(-2 * time.Hour)},
+		{"id": 2, "type": "organization_created", "message": "New slaughterhouse added to the network", "created_at": time.Now().Add(-5 * time.Hour)},
+	}
 
-func (h *AdminDashboardHandler) GetSystemAlerts(w http.ResponseWriter, r *http.Request) {
-	h.writeServiceResponse(w, h.service.GetAlerts(limitFromQuery(r, 5)))
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(activity)
 }
 
 func (h *AdminDashboardHandler) GetAdminProfile(w http.ResponseWriter, r *http.Request) {
@@ -73,12 +63,4 @@ func (h *AdminDashboardHandler) GetAdminProfile(w http.ResponseWriter, r *http.R
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(profile)
-}
-
-func limitFromQuery(r *http.Request, fallback int) int {
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil || limit <= 0 || limit > 100 {
-		return fallback
-	}
-	return limit
 }

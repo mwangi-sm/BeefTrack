@@ -288,7 +288,7 @@ func main() {
     mux := http.NewServeMux()
 
     // Register admin routes
-    routes.AdminRoutes(mux, verifier, db)
+    routes.AdminRoutes(mux, verifier)
 
     // --- Health Check ---
     mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
