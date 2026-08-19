@@ -9,11 +9,11 @@ import (
 
 	"backend/internal/config"
 	"backend/internal/database"
-	appmiddleware "backend/internal/middleware"
 	"backend/internal/routes"
 	"backend/internal/utils"
 
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -228,6 +228,112 @@ type DistributorShipment struct {
 	SourceOrigin  string `json:"source_origin,omitempty"`
 	ShipmentDate  string `json:"shipment_date,omitempty"`
 	Status        string `json:"status,omitempty"`
+}
+type SlaughterhouseProfile struct {
+	ID        string `json:"id,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Location  string `json:"location,omitempty"`
+	CreatedAt string `json:"created_at,omitempty"`
+}
+
+type SlaughterhouseOfficer struct {
+	ID               string `json:"id,omitempty"`
+	SlaughterhouseID string `json:"slaughterhouse_id,omitempty"`
+	FullName         string `json:"full_name,omitempty"`
+	Role             string `json:"role,omitempty"`
+	PhoneNumber      string `json:"phone_number,omitempty"`
+	CreatedAt        string `json:"created_at,omitempty"`
+}
+
+type AnimalReception struct {
+	ID               string `json:"id,omitempty"`
+	SlaughterhouseID string `json:"slaughterhouse_id,omitempty"`
+	AnimalID         string `json:"animal_id,omitempty"`
+	ReceivedDate     string `json:"received_date,omitempty"`
+	SourceFarm       string `json:"source_farm,omitempty"`
+	Status           string `json:"status,omitempty"`
+	CreatedAt        string `json:"created_at,omitempty"`
+}
+
+type AnteMortemInspection struct {
+	ID             string `json:"id,omitempty"`
+	AnimalID       string `json:"animal_id,omitempty"`
+	InspectorName  string `json:"inspector_name,omitempty"`
+	InspectionDate string `json:"inspection_date,omitempty"`
+	HealthStatus   string `json:"health_status,omitempty"`
+	Findings       string `json:"findings,omitempty"`
+	Passed         bool   `json:"passed,omitempty"`
+	CreatedAt      string `json:"created_at,omitempty"`
+}
+
+type SlaughterOperation struct {
+	ID              string  `json:"id,omitempty"`
+	AnimalID        string  `json:"animal_id,omitempty"`
+	SlaughterDate   string  `json:"slaughter_date,omitempty"`
+	OperatorName    string  `json:"operator_name,omitempty"`
+	CarcassWeightKg float64 `json:"carcass_weight_kg,omitempty"`
+	CreatedAt       string  `json:"created_at,omitempty"`
+}
+
+type Carcass struct {
+	ID        string  `json:"id,omitempty"`
+	AnimalID  string  `json:"animal_id,omitempty"`
+	Grade     string  `json:"grade,omitempty"`
+	WeightKg  float64 `json:"weight_kg,omitempty"`
+	Status    string  `json:"status,omitempty"`
+	CreatedAt string  `json:"created_at,omitempty"`
+}
+
+type CarcassInspection struct {
+	ID             string `json:"id,omitempty"`
+	CarcassID      string `json:"carcass_id,omitempty"`
+	InspectorName  string `json:"inspector_name,omitempty"`
+	InspectionDate string `json:"inspection_date,omitempty"`
+	Passed         bool   `json:"passed,omitempty"`
+	Remarks        string `json:"remarks,omitempty"`
+	CreatedAt      string `json:"created_at,omitempty"`
+}
+
+type SlaughterhouseShipment struct {
+	ID               string `json:"id,omitempty"`
+	SlaughterhouseID string `json:"slaughterhouse_id,omitempty"`
+	Destination      string `json:"destination,omitempty"`
+	BatchID          string `json:"batch_id,omitempty"`
+	DispatchDate     string `json:"dispatch_date,omitempty"`
+	Status           string `json:"status,omitempty"`
+	CreatedAt        string `json:"created_at,omitempty"`
+}
+type ProcessorProfile struct {
+	ID                         string  `json:"id,omitempty"`
+	CompanyName                string  `json:"company_name,omitempty"`
+	BusinessRegistrationNumber string  `json:"business_registration_number,omitempty"`
+	KraPin                     string  `json:"kra_pin,omitempty"`
+	LicenseNumber              string  `json:"license_number,omitempty"`
+	YearsInOperation           int     `json:"years_in_operation,omitempty"`
+	CompanyDescription         string  `json:"company_description,omitempty"`
+	Industry                   string  `json:"industry,omitempty"`
+	EmailAddress               string  `json:"email_address,omitempty"`
+	PhoneNumber                string  `json:"phone_number,omitempty"`
+	County                     string  `json:"county,omitempty"`
+	SubCounty                  string  `json:"sub_county,omitempty"`
+	Town                       string  `json:"town,omitempty"`
+	PostalAddress              string  `json:"postal_address,omitempty"`
+	GoogleMapsLocation         string  `json:"google_maps_location,omitempty"`
+	Latitude                   float64 `json:"latitude,omitempty"`
+	Longitude                  float64 `json:"longitude,omitempty"`
+	CreatedAt                  string  `json:"created_at,omitempty"`
+}
+
+type ProcessingBatch struct {
+	ID                 string `json:"id,omitempty"`
+	ProcessorID        string `json:"processor_id,omitempty"`
+	BatchNumber        string `json:"batch_number,omitempty"`
+	SourceSlaughter_ID string `json:"source_slaughter_id,omitempty"`
+	InputCarcassIDs    string `json:"input_carcass_ids,omitempty"`
+	ProcessingDate     string `json:"processing_date,omitempty"`
+	TotalCarcasses     int    `json:"total_carcasses,omitempty"`
+	Status             string `json:"status,omitempty"`
+	CreatedAt          string `json:"created_at,omitempty"`
 }
 
 // Helper to write safe, formatted JSON responses
@@ -648,10 +754,493 @@ func main() {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(`{"status":"OK","message":"Retailer batch registered successfully!"}`))
 	})
+	// ==========================================
+	// SLAUGHTERHOUSE / PROCESSOR API ENDPOINTS
+	// ==========================================
 
-	handler := appmiddleware.CORS(cfg.AllowedOrigins)(mux)
+	// 1. Slaughterhouse Profiles
+	mux.HandleFunc("GET /api/slaughterhouse/profiles", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if supabaseClient == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
 
-	port := cfg.Port
+		data, _, err := supabaseClient.From("slaughterhouse_profiles").Select("*", "exact", false).Execute()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"Failed to fetch profiles: %s"}`, err.Error())
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	})
+
+	mux.HandleFunc("POST /api/slaughterhouse/profiles", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		var item SlaughterhouseProfile
+		if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"Invalid request payload"}`))
+			return
+		}
+
+		if supabaseClient != nil {
+			_, _, err := supabaseClient.From("slaughterhouse_profiles").Insert(item, false, "", "", "").Execute()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, `{"error":"Failed to save profile: %s"}`, err.Error())
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"status":"OK","message":"Slaughterhouse profile registered successfully!"}`))
+	})
+
+	// 2. Slaughterhouse Officers
+	mux.HandleFunc("GET /api/slaughterhouse/officers", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if supabaseClient == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		data, _, err := supabaseClient.From("slaughterhouse_officers").Select("*", "exact", false).Execute()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"Failed to fetch officers: %s"}`, err.Error())
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	})
+
+	mux.HandleFunc("POST /api/slaughterhouse/officers", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		var item SlaughterhouseOfficer
+		if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"Invalid request payload"}`))
+			return
+		}
+
+		if supabaseClient != nil {
+			_, _, err := supabaseClient.From("slaughterhouse_officers").Insert(item, false, "", "", "").Execute()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, `{"error":"Failed to save officer: %s"}`, err.Error())
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"status":"OK","message":"Slaughterhouse officer registered successfully!"}`))
+	})
+
+	// 3. Animal Receptions
+	mux.HandleFunc("GET /api/slaughterhouse/receptions", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if supabaseClient == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		data, _, err := supabaseClient.From("animal_receptions").Select("*", "exact", false).Execute()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"Failed to fetch animal receptions: %s"}`, err.Error())
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	})
+
+	mux.HandleFunc("POST /api/slaughterhouse/receptions", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		var item AnimalReception
+		if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"Invalid request payload"}`))
+			return
+		}
+
+		if supabaseClient != nil {
+			_, _, err := supabaseClient.From("animal_receptions").Insert(item, false, "", "", "").Execute()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, `{"error":"Failed to save animal reception: %s"}`, err.Error())
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"status":"OK","message":"Animal reception registered successfully!"}`))
+	})
+
+	// 4. Ante-Mortem Inspections
+	mux.HandleFunc("GET /api/slaughterhouse/ante-mortem", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if supabaseClient == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		data, _, err := supabaseClient.From("ante_mortem_inspections").Select("*", "exact", false).Execute()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"Failed to fetch ante-mortem inspections: %s"}`, err.Error())
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	})
+
+	mux.HandleFunc("POST /api/slaughterhouse/ante-mortem", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		var item AnteMortemInspection
+		if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"Invalid request payload"}`))
+			return
+		}
+
+		if supabaseClient != nil {
+			_, _, err := supabaseClient.From("ante_mortem_inspections").Insert(item, false, "", "", "").Execute()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, `{"error":"Failed to save ante-mortem inspection: %s"}`, err.Error())
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"status":"OK","message":"Ante-mortem inspection registered successfully!"}`))
+	})
+
+	// 5. Slaughter Operations
+	mux.HandleFunc("GET /api/slaughterhouse/operations", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if supabaseClient == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		data, _, err := supabaseClient.From("slaughter_operations").Select("*", "exact", false).Execute()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"Failed to fetch slaughter operations: %s"}`, err.Error())
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	})
+
+	mux.HandleFunc("POST /api/slaughterhouse/operations", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		var item SlaughterOperation
+		if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"Invalid request payload"}`))
+			return
+		}
+
+		if supabaseClient != nil {
+			_, _, err := supabaseClient.From("slaughter_operations").Insert(item, false, "", "", "").Execute()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, `{"error":"Failed to save slaughter operation: %s"}`, err.Error())
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"status":"OK","message":"Slaughter operation registered successfully!"}`))
+	})
+
+	// 6. Carcasses
+	mux.HandleFunc("GET /api/slaughterhouse/carcasses", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if supabaseClient == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		data, _, err := supabaseClient.From("carcasses").Select("*", "exact", false).Execute()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"Failed to fetch carcasses: %s"}`, err.Error())
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	})
+
+	mux.HandleFunc("POST /api/slaughterhouse/carcasses", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		var item Carcass
+		if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"Invalid request payload"}`))
+			return
+		}
+
+		if supabaseClient != nil {
+			_, _, err := supabaseClient.From("carcasses").Insert(item, false, "", "", "").Execute()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, `{"error":"Failed to save carcass: %s"}`, err.Error())
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"status":"OK","message":"Carcass registered successfully!"}`))
+	})
+
+	// 7. Carcass Inspections
+	mux.HandleFunc("GET /api/slaughterhouse/carcass-inspections", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if supabaseClient == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		data, _, err := supabaseClient.From("carcass_inspections").Select("*", "exact", false).Execute()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"Failed to fetch carcass inspections: %s"}`, err.Error())
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	})
+
+	mux.HandleFunc("POST /api/slaughterhouse/carcass-inspections", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		var item CarcassInspection
+		if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"Invalid request payload"}`))
+			return
+		}
+
+		if supabaseClient != nil {
+			_, _, err := supabaseClient.From("carcass_inspections").Insert(item, false, "", "", "").Execute()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, `{"error":"Failed to save carcass inspection: %s"}`, err.Error())
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"status":"OK","message":"Carcass inspection registered successfully!"}`))
+	})
+
+	// 8. Slaughterhouse Shipments
+	mux.HandleFunc("GET /api/slaughterhouse/shipments", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if supabaseClient == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		data, _, err := supabaseClient.From("slaughterhouse_shipments").Select("*", "exact", false).Execute()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"Failed to fetch shipments: %s"}`, err.Error())
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	})
+
+	mux.HandleFunc("POST /api/slaughterhouse/shipments", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		var item SlaughterhouseShipment
+		if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"Invalid request payload"}`))
+			return
+		}
+
+		if supabaseClient != nil {
+			_, _, err := supabaseClient.From("slaughterhouse_shipments").Insert(item, false, "", "", "").Execute()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, `{"error":"Failed to save shipment: %s"}`, err.Error())
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"status":"OK","message":"Slaughterhouse shipment registered successfully!"}`))
+	})
+	// ==========================================
+	// PROCESSOR API ENDPOINTS
+	// ==========================================
+
+	// GET /api/processor/profiles - Fetch all processor profiles
+	mux.HandleFunc("GET /api/processor/profiles", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		if supabaseClient == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		data, _, err := supabaseClient.From("processor_profiles").Select("*", "exact", false).Execute()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"Failed to fetch processor profiles: %s"}`, err.Error())
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	})
+
+	// POST /api/processor/profiles - Insert a new processor profile
+	mux.HandleFunc("POST /api/processor/profiles", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		var profile ProcessorProfile
+		if err := json.NewDecoder(r.Body).Decode(&profile); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"Invalid request payload"}`))
+			return
+		}
+
+		if supabaseClient != nil {
+			_, _, err := supabaseClient.From("processor_profiles").Insert(profile, false, "", "", "").Execute()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, `{"error":"Failed to save processor profile: %s"}`, err.Error())
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"status":"OK","message":"Processor profile registered successfully!"}`))
+	})
+
+	// GET /api/processor/batches - Fetch all processing batches
+	mux.HandleFunc("GET /api/processor/batches", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		if supabaseClient == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		data, _, err := supabaseClient.From("processing_batches").Select("*", "exact", false).Execute()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, `{"error":"Failed to fetch processing batches: %s"}`, err.Error())
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	})
+
+	// POST /api/processor/batches - Insert a new processing batch
+	mux.HandleFunc("POST /api/processor/batches", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		var batch ProcessingBatch
+		if err := json.NewDecoder(r.Body).Decode(&batch); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"Invalid request payload"}`))
+			return
+		}
+
+		if supabaseClient != nil {
+			_, _, err := supabaseClient.From("processing_batches").Insert(batch, false, "", "", "").Execute()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, `{"error":"Failed to save processing batch: %s"}`, err.Error())
+				return
+			}
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error":"Database connection not initialized"}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"status":"OK","message":"Processing batch registered successfully!"}`))
+	})
+
+	handler := cors.AllowAll().Handler(mux)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
 	log.Printf("Server listening on port %s", port)
 	if err := http.ListenAndServe(":"+port, handler); err != nil {

@@ -14,11 +14,9 @@ export const SELF_SERVICE_ROLES = new Set([
 
 function safeRoleFromMetadata(user) {
   const appRole = user?.app_metadata?.role;
-  if (appRole) return appRole;
-
-  const requestedRole = user?.user_metadata?.role || user?.user_metadata?.requested_role;
-  if (!requestedRole || RESERVED_ROLES.has(requestedRole)) return "";
-  return SELF_SERVICE_ROLES.has(requestedRole) ? requestedRole : "";
+  // app_metadata is minted by trusted server-side provisioning. Never use
+  // client-editable user_metadata to authorize a dashboard or API route.
+  return SELF_SERVICE_ROLES.has(appRole) || RESERVED_ROLES.has(appRole) ? appRole : "";
 }
 
 export function buildSignupMetadata(formData) {

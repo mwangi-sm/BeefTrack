@@ -27,6 +27,14 @@ func paging(r *http.Request) (int, int) {
 	return p, z
 }
 func fail(w http.ResponseWriter, e error) {
+	if errors.Is(e, repo.ErrUnsupportedIssue) {
+		utils.Fail(w, 501, "Issue reporting is unavailable because no verified issue-persistence column exists.", e.Error())
+		return
+	}
+	if errors.Is(e, repo.ErrUnsupportedSchema) {
+		utils.Fail(w, 501, "This operation is unavailable until the remaining live transporter column contract is supplied.", e.Error())
+		return
+	}
 	if errors.Is(e, repo.ErrNotFound) {
 		utils.Fail(w, 404, "The requested record was not found.", "not found")
 		return
@@ -35,7 +43,7 @@ func fail(w http.ResponseWriter, e error) {
 		utils.Fail(w, 409, "This action conflicts with the current record state.", e.Error())
 		return
 	}
-	if e.Error() == "invalid status" || e.Error() == "issue note is required" || e.Error() == "no supported profile fields supplied" {
+	if e.Error() == "invalid status" || e.Error() == "issue note is required" {
 		utils.Fail(w, 422, "Some information is invalid. Please review and try again.", e.Error())
 		return
 	}

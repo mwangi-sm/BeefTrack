@@ -62,7 +62,7 @@ export function AssignedDeliveries() {
                 key={d.id}
                 id={d.id}
                 type={`${d.pickup} → ${d.destination}`}
-                due={d.scheduledTime}
+                due={d.pickupTime || d.assignedAt}
                 status={meta.status}
                 label={meta.label}
                 onClick={() =>

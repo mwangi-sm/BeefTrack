@@ -93,23 +93,10 @@ export function DeliveryDetails() {
         <div className="grid-2col">
           <div>
             <Panel title="Shipment details">
-              <DetailRow label="Farmer" value={delivery.farmer} />
-              <DetailRow
-                label="Slaughterhouse"
-                value={delivery.slaughterhouse}
-              />
-              <DetailRow label="Pickup" value={delivery.pickup} />
-              <DetailRow label="Destination" value={delivery.destination} />
-              <DetailRow label="Driver" value={delivery.driver} />
-              <DetailRow label="Vehicle number" value={delivery.vehicle} />
-              <DetailRow
-                label="Scheduled time"
-                value={delivery.scheduledTime}
-              />
-              <DetailRow label="Animal details" value={delivery.animal} />
-              {delivery.notes && (
-                <DetailRow label="Notes" value={delivery.notes} />
-              )}
+              <DetailRow label="Assignment ID" value={delivery.id} />
+              <DetailRow label="Trip ID" value={delivery.tripId || 'Not started'} />
+              <DetailRow label="Assigned at" value={delivery.assignedAt} />
+              <DetailRow label="Pickup time" value={delivery.pickupTime || 'Not scheduled'} />
             </Panel>
 
             {issueOpen && (
@@ -205,17 +192,7 @@ export function DeliveryDetails() {
                     Start trip
                   </button>
                 )}
-                {!issueOpen && (
-                  <button
-                    className="btn btn-outline"
-                    onClick={() => setIssueOpen(true)}
-                  >
-                    <Icon size={15} style={{ marginRight: 6 }}>
-                      {IconPaths.alert}
-                    </Icon>
-                    Report issue
-                  </button>
-                )}
+                <p style={{ fontSize: 12, color: 'var(--ink-600)', margin: 0 }}>Issue reporting is not available yet.</p>
               </div>
             </Panel>
           </div>

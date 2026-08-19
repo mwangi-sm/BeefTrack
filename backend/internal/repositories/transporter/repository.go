@@ -4,12 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"backend/internal/database"
 )
 
-var ErrNotFound = fmt.Errorf("not found")
+var (
+	ErrNotFound          = fmt.Errorf("not found")
+	ErrUnsupportedSchema = fmt.Errorf("operation requires transporter columns not supplied by the live schema contract")
+	ErrUnsupportedIssue  = fmt.Errorf("issue persistence is unavailable: no verified issue column was supplied")
+)
 
 type Repository struct{ db *database.DB }
 
@@ -21,33 +26,21 @@ func (r *Repository) ready() error {
 	return nil
 }
 
+// Delivery is the compatibility view of pickup_assignments. ID is bigint and TripID is UUID.
 type Delivery struct {
-	ID             string `json:"id"`
-	Pickup         string `json:"pickup"`
-	Destination    string `json:"destination"`
-	Farmer         string `json:"farmer"`
-	Slaughterhouse string `json:"slaughterhouse"`
-	Driver         string `json:"driver"`
-	Vehicle        string `json:"vehicle"`
-	ScheduledTime  string `json:"scheduledTime"`
-	Animal         string `json:"animal"`
-	Notes          string `json:"notes"`
-	Status         string `json:"status"`
-	CreatedAt      string `json:"createdAt"`
+	ID         int64  `json:"id"`
+	TripID     string `json:"tripId"`
+	Status     string `json:"status"`
+	AssignedAt string `json:"assignedAt,omitempty"`
+	PickupTime string `json:"pickupTime,omitempty"`
 }
+
+// Trip is backed by trip_tracking. Both ID fields are bigint; TripID is UUID.
 type Trip struct {
-	ID                  string  `json:"id"`
-	TripID              string  `json:"tripId"`
-	DeliveryID          string  `json:"deliveryId"`
-	ETA                 string  `json:"eta"`
-	Status              string  `json:"status"`
-	Route               string  `json:"route"`
-	DistanceRemainingKm float64 `json:"distanceRemainingKm"`
-	ProgressPercent     float64 `json:"progressPercent"`
-	CurrentLat          float64 `json:"currentLat"`
-	CurrentLng          float64 `json:"currentLng"`
-	DestLat             float64 `json:"destLat"`
-	DestLng             float64 `json:"destLng"`
+	ID           int64  `json:"id"`
+	AssignmentID int64  `json:"assignmentId"`
+	TripID       string `json:"tripId"`
+	Status       string `json:"status"`
 }
 type Notification struct {
 	ID     string `json:"id"`
@@ -56,92 +49,132 @@ type Notification struct {
 	Time   string `json:"time"`
 	Unread bool   `json:"unread"`
 }
-type Profile struct {
-	ID                     string `json:"id"`
-	FullName               string `json:"fullName"`
-	Email                  string `json:"email"`
-	PhoneNumber            string `json:"phoneNumber"`
-	AccountType            string `json:"accountType"`
-	NationalID             string `json:"nationalId"`
-	DriversLicenceNo       string `json:"driversLicenceNo"`
-	LicenceExpiryDate      string `json:"licenceExpiryDate"`
-	RegistrationNumber     string `json:"vehicleRegistration"`
-	VehicleType            string `json:"vehicleType"`
-	Capacity               string `json:"vehicleCapacity"`
-	RefrigerationAvailable bool   `json:"refrigerationAvailable"`
-}
 
-type deliveryRow struct {
-	ID             string    `json:"id"`
-	Pickup         string    `json:"pickup"`
-	Destination    string    `json:"destination"`
-	Farmer         string    `json:"farmer"`
-	Slaughterhouse string    `json:"slaughterhouse"`
-	Driver         string    `json:"driver"`
-	Vehicle        string    `json:"vehicle"`
-	ScheduledTime  time.Time `json:"scheduled_time"`
-	Animal         string    `json:"animal_summary"`
-	Notes          string    `json:"notes"`
-	Status         string    `json:"status"`
-	CreatedAt      time.Time `json:"created_at"`
+type Profile struct {
+	ID                  string  `json:"id"`
+	TransporterID       string  `json:"transporterId"`
+	FullName            string  `json:"fullName"`
+	Email               string  `json:"email"`
+	Phone               string  `json:"phone"`
+	ProfilePhoto        string  `json:"photo"`
+	AccountStatus       string  `json:"accountStatus"`
+	VerificationStatus  string  `json:"verificationStatus"`
+	TransporterType     string  `json:"transporterType"`
+	NationalID          string  `json:"nationalId"`
+	LicenseNumber       string  `json:"licenseNumber"`
+	CompanyName         string  `json:"companyName"`
+	BusinessRegNumber   string  `json:"businessRegNumber"`
+	VehicleRegistration string  `json:"vehicleRegistration"`
+	VehicleType         string  `json:"vehicleType"`
+	VehicleCapacity     float64 `json:"vehicleCapacity"`
+	VehicleMake         string  `json:"vehicleMake"`
+	VehicleModel        string  `json:"vehicleModel"`
+}
+type assignmentRow struct {
+	ID         int64      `json:"id"`
+	TripID     string     `json:"trip_id"`
+	Status     string     `json:"status"`
+	AssignedAt time.Time  `json:"assigned_at"`
+	PickupTime *time.Time `json:"pickup_time"`
 }
 
 func decode(data []byte, out interface{}) error { return json.Unmarshal(data, out) }
-func (r *Repository) Deliveries(ctx context.Context, actor, status string, from, to int) ([]Delivery, int64, error) {
+
+// transporterID resolves auth subject (profiles.id), never treating it as transporters.id.
+func (r *Repository) transporterID(ctx context.Context, profileID string) (string, error) {
 	if err := r.ready(); err != nil {
+		return "", err
+	}
+	var rows []struct {
+		ID string `json:"id"`
+	}
+	data, _, err := r.db.Client.From("transporters").Select("id", "", false).Eq("profile_id", profileID).ExecuteWithContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	if err = decode(data, &rows); err != nil {
+		return "", err
+	}
+	if len(rows) == 0 {
+		return "", ErrNotFound
+	}
+	return rows[0].ID, nil
+}
+
+func (r *Repository) hasRow(ctx context.Context, table, column, value string) (bool, error) {
+	data, _, err := r.db.Client.From(table).Select(column, "", false).Eq(column, value).Range(0, 0, "").ExecuteWithContext(ctx)
+	if err != nil {
+		return false, err
+	}
+	var rows []map[string]interface{}
+	if err = decode(data, &rows); err != nil {
+		return false, err
+	}
+	return len(rows) > 0, nil
+}
+
+func (r *Repository) assignments(ctx context.Context, actor, status string, from, to int, id *int64) ([]assignmentRow, int64, error) {
+	transporterID, err := r.transporterID(ctx, actor)
+	if err != nil {
 		return nil, 0, err
 	}
-	q := r.db.Client.From("deliveries").Select("id,pickup,destination,farmer,slaughterhouse,driver,vehicle,scheduled_time,animal_summary,notes,status,created_at", "exact", false).Eq("transporter_id", actor)
+	q := r.db.Client.From("pickup_assignments").Select("id,trip_id,status,assigned_at,pickup_time", "exact", false).Eq("transporter_id", transporterID)
 	if status != "" {
 		q = q.Eq("status", status)
 	}
-	var rows []deliveryRow
-	data, total, err := q.Order("scheduled_time", nil).Range(from, to, "").ExecuteWithContext(ctx)
+	if id != nil {
+		q = q.Eq("id", strconv.FormatInt(*id, 10))
+	}
+	data, total, err := q.Order("assigned_at", nil).Range(from, to, "").ExecuteWithContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
+	var rows []assignmentRow
 	if err = decode(data, &rows); err != nil {
 		return nil, 0, err
 	}
+	return rows, total, nil
+}
+func asDeliveries(rows []assignmentRow) []Delivery {
 	out := make([]Delivery, len(rows))
-	for i, v := range rows {
-		out[i] = Delivery{v.ID, v.Pickup, v.Destination, v.Farmer, v.Slaughterhouse, v.Driver, v.Vehicle, v.ScheduledTime.Format(time.RFC3339), v.Animal, v.Notes, v.Status, v.CreatedAt.Format(time.RFC3339)}
+	for i, row := range rows {
+		out[i] = Delivery{ID: row.ID, TripID: row.TripID, Status: row.Status, AssignedAt: row.AssignedAt.Format(time.RFC3339)}
+		if row.PickupTime != nil {
+			out[i].PickupTime = row.PickupTime.Format(time.RFC3339)
+		}
 	}
-	return out, total, nil
+	return out
+}
+func (r *Repository) Deliveries(ctx context.Context, actor, status string, from, to int) ([]Delivery, int64, error) {
+	rows, total, err := r.assignments(ctx, actor, status, from, to, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	return asDeliveries(rows), total, nil
 }
 func (r *Repository) Delivery(ctx context.Context, actor, id string) (Delivery, error) {
-	v, n, e := r.DeliveriesByID(ctx, actor, id)
-	if e != nil {
-		return Delivery{}, e
-	}
-	if n == 0 {
+	assignmentID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
 		return Delivery{}, ErrNotFound
 	}
-	return v, nil
-}
-func (r *Repository) DeliveriesByID(ctx context.Context, actor, id string) (Delivery, int, error) {
-	if err := r.ready(); err != nil {
-		return Delivery{}, 0, err
-	}
-	var rows []deliveryRow
-	data, _, err := r.db.Client.From("deliveries").Select("id,pickup,destination,farmer,slaughterhouse,driver,vehicle,scheduled_time,animal_summary,notes,status,created_at", "", false).Eq("id", id).Eq("transporter_id", actor).ExecuteWithContext(ctx)
+	rows, _, err := r.assignments(ctx, actor, "", 0, 0, &assignmentID)
 	if err != nil {
-		return Delivery{}, 0, err
-	}
-	if err = decode(data, &rows); err != nil {
-		return Delivery{}, 0, err
-	}
-	if len(rows) == 0 {
-		return Delivery{}, 0, nil
-	}
-	v := rows[0]
-	return Delivery{v.ID, v.Pickup, v.Destination, v.Farmer, v.Slaughterhouse, v.Driver, v.Vehicle, v.ScheduledTime.Format(time.RFC3339), v.Animal, v.Notes, v.Status, v.CreatedAt.Format(time.RFC3339)}, 1, nil
-}
-func (r *Repository) UpdateDelivery(ctx context.Context, actor, id, from string, values map[string]interface{}) (Delivery, error) {
-	if err := r.ready(); err != nil {
 		return Delivery{}, err
 	}
-	q := r.db.Client.From("deliveries").Update(values, "representation", "").Eq("id", id).Eq("transporter_id", actor)
+	if len(rows) == 0 {
+		return Delivery{}, ErrNotFound
+	}
+	return asDeliveries(rows)[0], nil
+}
+func (r *Repository) UpdateDelivery(ctx context.Context, actor, id, from string, values map[string]interface{}) (Delivery, error) {
+	assignmentID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return Delivery{}, ErrNotFound
+	}
+	if _, err = r.Delivery(ctx, actor, id); err != nil {
+		return Delivery{}, err
+	}
+	q := r.db.Client.From("pickup_assignments").Update(values, "representation", "").Eq("id", strconv.FormatInt(assignmentID, 10))
 	if from != "" {
 		q = q.Eq("status", from)
 	}
@@ -155,73 +188,88 @@ func (r *Repository) UpdateDelivery(ctx context.Context, actor, id, from string,
 	}
 	return r.Delivery(ctx, actor, id)
 }
+
+// History is defined by the existence of a delivery_records row. It does not
+// infer completion from a legacy deliveries table or a guessed timestamp.
+func (r *Repository) History(ctx context.Context, actor string, from, to int) ([]Delivery, int64, error) {
+	transporterID, err := r.transporterID(ctx, actor)
+	if err != nil {
+		return nil, 0, err
+	}
+	var rows []struct {
+		AssignmentID int64  `json:"assignment_id"`
+		TripID       string `json:"trip_id"`
+	}
+	data, total, err := r.db.Client.From("delivery_records").Select("assignment_id,trip_id,pickup_assignments!inner(id,trip_id,transport_trips!inner(id,transporter_id))", "exact", false).Eq("pickup_assignments.transport_trips.transporter_id", transporterID).Range(from, to, "").ExecuteWithContext(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	if err = decode(data, &rows); err != nil {
+		return nil, 0, err
+	}
+	out := make([]Delivery, len(rows))
+	for i, row := range rows {
+		out[i] = Delivery{ID: row.AssignmentID, TripID: row.TripID, Status: "delivered"}
+	}
+	return out, total, nil
+}
+
 func (r *Repository) ActiveTrip(ctx context.Context, actor string) (*Trip, error) {
-	if err := r.ready(); err != nil {
+	transporterID, err := r.transporterID(ctx, actor)
+	if err != nil {
 		return nil, err
 	}
 	var rows []struct {
-		ID         string  `json:"id"`
-		TripID     string  `json:"trip_id"`
-		DeliveryID string  `json:"delivery_id"`
-		ETA        string  `json:"eta"`
-		Status     string  `json:"status"`
-		Route      string  `json:"route_description"`
-		Distance   float64 `json:"distance_remaining_km"`
-		Progress   float64 `json:"progress_percent"`
-		CurrentLat float64 `json:"current_lat"`
-		CurrentLng float64 `json:"current_lng"`
-		DestLat    float64 `json:"dest_lat"`
-		DestLng    float64 `json:"dest_lng"`
+		ID           int64 `json:"id"`
+		AssignmentID int64 `json:"assignment_id"`
+		Assignment   struct {
+			TripID string `json:"trip_id"`
+			Status string `json:"status"`
+		} `json:"pickup_assignments"`
 	}
-	data, _, err := r.db.Client.From("trips").Select("id,trip_id,delivery_id,current_lat,current_lng,dest_lat,dest_lng,eta,distance_remaining_km,progress_percent,status,route_description", "", false).In("status", []string{"not_started", "in_transit", "paused"}).ExecuteWithContext(ctx)
+	data, _, err := r.db.Client.From("trip_tracking").Select("id,assignment_id,pickup_assignments!inner(trip_id,status,transport_trips!inner(id,transporter_id))", "", false).Eq("pickup_assignments.transport_trips.transporter_id", transporterID).Order("id", nil).ExecuteWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if err = decode(data, &rows); err != nil {
 		return nil, err
 	}
-	for _, v := range rows {
-		if _, e := r.Delivery(ctx, actor, v.DeliveryID); e == nil {
-			return &Trip{v.ID, v.TripID, v.DeliveryID, v.ETA, v.Status, v.Route, v.Distance, v.Progress, v.CurrentLat, v.CurrentLng, v.DestLat, v.DestLng}, nil
-		}
+	if len(rows) == 0 {
+		return nil, nil
 	}
-	return nil, nil
+	v := rows[0]
+	return &Trip{ID: v.ID, AssignmentID: v.AssignmentID, TripID: v.Assignment.TripID, Status: v.Assignment.Status}, nil
 }
 func (r *Repository) UpdateTrip(ctx context.Context, actor, status string) (*Trip, error) {
-	t, e := r.ActiveTrip(ctx, actor)
-	if e != nil || t == nil {
-		return t, e
+	t, err := r.ActiveTrip(ctx, actor)
+	if err != nil || t == nil {
+		return t, err
 	}
-	data, _, e := r.db.Client.From("trips").Update(map[string]interface{}{"status": status, "updated_at": time.Now().UTC()}, "representation", "").Eq("id", t.ID).ExecuteWithContext(ctx)
-	if e != nil {
-		return nil, e
-	}
-	var rows []map[string]interface{}
-	if decode(data, &rows) != nil || len(rows) == 0 {
-		return nil, ErrNotFound
-	}
-	if status == "delivered" {
-		_, e = r.UpdateDelivery(ctx, actor, t.DeliveryID, "", map[string]interface{}{"status": "delivered"})
-		return t, e
+	if _, err = r.UpdateDelivery(ctx, actor, strconv.FormatInt(t.AssignmentID, 10), "", map[string]interface{}{"status": status}); err != nil {
+		return nil, err
 	}
 	t.Status = status
 	return t, nil
 }
+
 func (r *Repository) Notifications(ctx context.Context, actor string, from, to int) ([]Notification, int64, error) {
 	if err := r.ready(); err != nil {
 		return nil, 0, err
 	}
 	var rows []struct {
-		ID, Title, Message, Type string
-		Read                     bool      `json:"read"`
-		CreatedAt                time.Time `json:"created_at"`
+		ID        string    `json:"id"`
+		Title     string    `json:"title"`
+		Message   string    `json:"message"`
+		Type      string    `json:"type"`
+		Read      bool      `json:"read"`
+		CreatedAt time.Time `json:"created_at"`
 	}
-	data, total, e := r.db.Client.From("admin_notifications").Select("id,title,message,type,read,created_at", "exact", false).Eq("recipient_id", actor).Order("created_at", nil).Range(from, to, "").ExecuteWithContext(ctx)
-	if e != nil {
-		return nil, 0, e
+	data, total, err := r.db.Client.From("admin_notifications").Select("id,title,message,type,read,created_at", "exact", false).Eq("recipient_id", actor).Order("created_at", nil).Range(from, to, "").ExecuteWithContext(ctx)
+	if err != nil {
+		return nil, 0, err
 	}
-	if e = decode(data, &rows); e != nil {
-		return nil, 0, e
+	if err = decode(data, &rows); err != nil {
+		return nil, 0, err
 	}
 	out := make([]Notification, len(rows))
 	for i, v := range rows {
@@ -230,9 +278,9 @@ func (r *Repository) Notifications(ctx context.Context, actor string, from, to i
 	return out, total, nil
 }
 func (r *Repository) ReadNotification(ctx context.Context, actor, id string) error {
-	data, _, e := r.db.Client.From("admin_notifications").Update(map[string]interface{}{"read": true, "read_at": time.Now().UTC()}, "representation", "").Eq("id", id).Eq("recipient_id", actor).ExecuteWithContext(ctx)
-	if e != nil {
-		return e
+	data, _, err := r.db.Client.From("admin_notifications").Update(map[string]interface{}{"read": true, "read_at": time.Now().UTC()}, "representation", "").Eq("id", id).Eq("recipient_id", actor).ExecuteWithContext(ctx)
+	if err != nil {
+		return err
 	}
 	var rows []map[string]interface{}
 	if decode(data, &rows) != nil || len(rows) == 0 {
@@ -241,44 +289,199 @@ func (r *Repository) ReadNotification(ctx context.Context, actor, id string) err
 	return nil
 }
 func (r *Repository) Profile(ctx context.Context, actor string) (Profile, error) {
-	if err := r.ready(); err != nil {
+	transporterID, err := r.transporterID(ctx, actor)
+	if err != nil {
 		return Profile{}, err
 	}
-	var rows []struct {
-		ID            string `json:"id"`
-		FullName      string `json:"full_name"`
-		Email         string `json:"email"`
-		Phone         string `json:"phone_number"`
-		AccountType   string `json:"account_type"`
-		NationalID    string `json:"national_id"`
-		Licence       string `json:"drivers_licence_no"`
-		Expiry        string `json:"licence_expiry_date"`
-		Reg           string `json:"registration_number"`
-		VehicleType   string `json:"vehicle_type"`
-		Capacity      string `json:"capacity"`
-		Refrigeration bool   `json:"refrigeration_available"`
+	var profileRows []struct {
+		FullName           string `json:"full_name"`
+		Email              string `json:"email"`
+		Phone              string `json:"phone"`
+		ProfilePhoto       string `json:"profile_photo"`
+		AccountStatus      string `json:"account_status"`
+		VerificationStatus string `json:"verification_status"`
 	}
-	data, _, e := r.db.Client.From("transporters").Select("id,full_name,email,phone_number,account_type,national_id,drivers_licence_no,licence_expiry_date,registration_number,vehicle_type,capacity,refrigeration_available", "", false).Eq("id", actor).ExecuteWithContext(ctx)
-	if e != nil {
-		return Profile{}, e
+	data, _, err := r.db.Client.From("profiles").Select("full_name,email,phone,profile_photo,account_status,verification_status", "", false).Eq("id", actor).ExecuteWithContext(ctx)
+	if err != nil {
+		return Profile{}, err
 	}
-	if e = decode(data, &rows); e != nil {
-		return Profile{}, e
+	if err = decode(data, &profileRows); err != nil {
+		return Profile{}, err
 	}
-	if len(rows) == 0 {
+	if len(profileRows) == 0 {
 		return Profile{}, ErrNotFound
 	}
-	v := rows[0]
-	return Profile{v.ID, v.FullName, v.Email, v.Phone, v.AccountType, v.NationalID, v.Licence, v.Expiry, v.Reg, v.VehicleType, v.Capacity, v.Refrigeration}, nil
+	p := Profile{ID: actor, TransporterID: transporterID, FullName: profileRows[0].FullName, Email: profileRows[0].Email, Phone: profileRows[0].Phone, ProfilePhoto: profileRows[0].ProfilePhoto, AccountStatus: profileRows[0].AccountStatus, VerificationStatus: profileRows[0].VerificationStatus}
+	var transporterRows []struct {
+		Type string `json:"transporter_type"`
+	}
+	data, _, err = r.db.Client.From("transporters").Select("transporter_type", "", false).Eq("id", transporterID).ExecuteWithContext(ctx)
+	if err != nil {
+		return Profile{}, err
+	}
+	if err = decode(data, &transporterRows); err != nil {
+		return Profile{}, err
+	}
+	if len(transporterRows) > 0 {
+		p.TransporterType = transporterRows[0].Type
+	}
+	if p.TransporterType == "company" {
+		var rows []struct {
+			CompanyName        string `json:"company_name"`
+			RegistrationNumber string `json:"registration_number"`
+		}
+		data, _, err = r.db.Client.From("company_transporters").Select("company_name,registration_number", "", false).Eq("transporter_id", transporterID).ExecuteWithContext(ctx)
+		if err != nil {
+			return Profile{}, err
+		}
+		if err = decode(data, &rows); err != nil {
+			return Profile{}, err
+		}
+		if len(rows) > 0 {
+			p.CompanyName, p.BusinessRegNumber = rows[0].CompanyName, rows[0].RegistrationNumber
+		}
+	} else {
+		var rows []struct {
+			NationalID string `json:"national_id"`
+			License    string `json:"driving_license_no"`
+		}
+		data, _, err = r.db.Client.From("individual_transporters").Select("national_id,driving_license_no", "", false).Eq("transporter_id", transporterID).ExecuteWithContext(ctx)
+		if err != nil {
+			return Profile{}, err
+		}
+		if err = decode(data, &rows); err != nil {
+			return Profile{}, err
+		}
+		if len(rows) > 0 {
+			p.NationalID, p.LicenseNumber = rows[0].NationalID, rows[0].License
+		}
+	}
+	var vehicles []struct {
+		Registration string  `json:"registration_number"`
+		Type         string  `json:"vehicle_type"`
+		Capacity     float64 `json:"capacity"`
+		Make         string  `json:"make"`
+		Model        string  `json:"model"`
+	}
+	data, _, err = r.db.Client.From("vehicles").Select("registration_number,vehicle_type,capacity,make,model", "", false).Eq("transporter_id", transporterID).Order("created_at", nil).Range(0, 0, "").ExecuteWithContext(ctx)
+	if err != nil {
+		return Profile{}, err
+	}
+	if err = decode(data, &vehicles); err != nil {
+		return Profile{}, err
+	}
+	if len(vehicles) > 0 {
+		v := vehicles[0]
+		p.VehicleRegistration, p.VehicleType, p.VehicleCapacity, p.VehicleMake, p.VehicleModel = v.Registration, v.Type, v.Capacity, v.Make, v.Model
+	}
+	return p, nil
 }
 func (r *Repository) UpdateProfile(ctx context.Context, actor string, values map[string]interface{}) (Profile, error) {
-	data, _, e := r.db.Client.From("transporters").Update(values, "representation", "").Eq("id", actor).ExecuteWithContext(ctx)
-	if e != nil {
-		return Profile{}, e
+	transporterID, err := r.transporterID(ctx, actor)
+	if err != nil {
+		return Profile{}, err
 	}
-	var rows []map[string]interface{}
-	if decode(data, &rows) != nil || len(rows) == 0 {
+	var transporterRows []struct {
+		Type string `json:"transporter_type"`
+	}
+	data, _, err := r.db.Client.From("transporters").Select("transporter_type", "", false).Eq("id", transporterID).ExecuteWithContext(ctx)
+	if err != nil {
+		return Profile{}, err
+	}
+	if err = decode(data, &transporterRows); err != nil {
+		return Profile{}, err
+	}
+	if len(transporterRows) == 0 {
 		return Profile{}, ErrNotFound
+	}
+	transporterType := transporterRows[0].Type
+	profiles := map[string]interface{}{}
+	for api, column := range map[string]string{"fullName": "full_name", "email": "email", "phone": "phone", "photo": "profile_photo"} {
+		if value, ok := values[api]; ok {
+			profiles[column] = value
+		}
+	}
+	if len(profiles) > 0 {
+		if _, _, err = r.db.Client.From("profiles").Update(profiles, "", "").Eq("id", actor).ExecuteWithContext(ctx); err != nil {
+			return Profile{}, err
+		}
+	}
+	individual := map[string]interface{}{}
+	if value, ok := values["fullName"]; ok {
+		individual["full_name"] = value
+	}
+	if value, ok := values["nationalId"]; ok {
+		individual["national_id"] = value
+	}
+	if value, ok := values["licenseNumber"]; ok {
+		individual["driving_license_no"] = value
+	}
+	if transporterType == "individual" && len(individual) > 0 {
+		exists, checkErr := r.hasRow(ctx, "individual_transporters", "transporter_id", transporterID)
+		if checkErr != nil {
+			return Profile{}, checkErr
+		}
+		if exists {
+			_, _, err = r.db.Client.From("individual_transporters").Update(individual, "", "").Eq("transporter_id", transporterID).ExecuteWithContext(ctx)
+		} else {
+			individual["transporter_id"] = transporterID
+			_, _, err = r.db.Client.From("individual_transporters").Insert(individual, false, "", "", "").ExecuteWithContext(ctx)
+		}
+		if err != nil {
+			return Profile{}, err
+		}
+	}
+	company := map[string]interface{}{}
+	if value, ok := values["companyName"]; ok {
+		company["company_name"] = value
+	}
+	if value, ok := values["businessRegNumber"]; ok {
+		company["registration_number"] = value
+	}
+	if value, ok := values["contactPerson"]; ok {
+		company["contact_person"] = value
+	}
+	if transporterType == "company" && len(company) > 0 {
+		exists, checkErr := r.hasRow(ctx, "company_transporters", "transporter_id", transporterID)
+		if checkErr != nil {
+			return Profile{}, checkErr
+		}
+		if exists {
+			_, _, err = r.db.Client.From("company_transporters").Update(company, "", "").Eq("transporter_id", transporterID).ExecuteWithContext(ctx)
+		} else {
+			company["transporter_id"] = transporterID
+			_, _, err = r.db.Client.From("company_transporters").Insert(company, false, "", "", "").ExecuteWithContext(ctx)
+		}
+		if err != nil {
+			return Profile{}, err
+		}
+	}
+	vehicle := map[string]interface{}{}
+	for api, column := range map[string]string{"vehicleRegistration": "registration_number", "vehicleType": "vehicle_type", "vehicleCapacity": "capacity", "vehicleMake": "make", "vehicleModel": "model"} {
+		if value, ok := values[api]; ok {
+			vehicle[column] = value
+		}
+	}
+	if len(vehicle) > 0 {
+		var existing []struct {
+			ID int64 `json:"id"`
+		}
+		data, _, queryErr := r.db.Client.From("vehicles").Select("id", "", false).Eq("transporter_id", transporterID).Range(0, 0, "").ExecuteWithContext(ctx)
+		if queryErr != nil {
+			return Profile{}, queryErr
+		}
+		if queryErr = decode(data, &existing); queryErr != nil {
+			return Profile{}, queryErr
+		}
+		if len(existing) > 0 {
+			_, _, err = r.db.Client.From("vehicles").Update(vehicle, "", "").Eq("id", strconv.FormatInt(existing[0].ID, 10)).Eq("transporter_id", transporterID).ExecuteWithContext(ctx)
+		} else {
+			vehicle["transporter_id"] = transporterID
+			_, _, err = r.db.Client.From("vehicles").Insert(vehicle, false, "", "", "").ExecuteWithContext(ctx)
+		}
+		if err != nil {
+			return Profile{}, err
+		}
 	}
 	return r.Profile(ctx, actor)
 }

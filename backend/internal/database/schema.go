@@ -60,27 +60,6 @@ var Migrations = []string{
 	);
 	`,
 
-	// Transport Trips
-
-	`
-	CREATE TABLE IF NOT EXISTS transport_trips (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		animal_id INTEGER NOT NULL,
-
-		vehicle_registration TEXT,
-		driver_name TEXT,
-
-		origin TEXT,
-		destination TEXT,
-
-		departure_time DATETIME,
-		arrival_time DATETIME,
-
-		FOREIGN KEY(animal_id)
-			REFERENCES animals(id)
-	);
-	`,
-
 	// Slaughter Records
 
 	`
@@ -126,8 +105,6 @@ var Migrations = []string{
 	`CREATE INDEX IF NOT EXISTS idx_animals_tag ON animals(tag_number);`,
 
 	`CREATE INDEX IF NOT EXISTS idx_events_animal ON animal_events(animal_id);`,
-
-	`CREATE INDEX IF NOT EXISTS idx_transport_animal ON transport_trips(animal_id);`,
 
 	`CREATE INDEX IF NOT EXISTS idx_batches_code ON product_batches(batch_code);`,
 }

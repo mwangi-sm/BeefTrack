@@ -23,8 +23,8 @@ export function DeliveryHistory() {
           <CareRow
             key={h.id}
             id={h.id}
-            type={h.destination}
-            due={h.date}
+            type={`Trip ${h.tripId}`}
+            due={h.assignedAt || 'Completed delivery'}
             status="ok"
             label="Delivered"
             onClick={() => navigate(`/dashboard/transporter/deliveries/${h.id}`)}

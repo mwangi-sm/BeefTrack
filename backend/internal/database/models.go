@@ -36,18 +36,6 @@ type AnimalEvent struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// TransportTrip tracks cattle movement between locations
-type TransportTrip struct {
-	ID                  int64      `json:"id"`
-	AnimalID            int64      `json:"animal_id"`
-	VehicleRegistration string     `json:"vehicle_registration"`
-	DriverName          string     `json:"driver_name"`
-	Origin              string     `json:"origin"`
-	Destination         string     `json:"destination"`
-	DepartureTime       *time.Time `json:"departure_time,omitempty"`
-	ArrivalTime         *time.Time `json:"arrival_time,omitempty"`
-}
-
 // SlaughterRecord records when and where an animal was processed
 type SlaughterRecord struct {
 	ID               int64     `json:"id"`

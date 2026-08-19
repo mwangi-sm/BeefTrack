@@ -26,7 +26,7 @@ func (s *Service) Deliveries(c context.Context, actor, status string, page, size
 func pageRange(page, size int) (int, int) { return pagination(page, size) }
 func (s *Service) History(c context.Context, actor string, page, size int) ([]repo.Delivery, int64, error) {
 	from, to := pageRange(page, size)
-	return s.repo.Deliveries(c, actor, "delivered", from, to)
+	return s.repo.History(c, actor, from, to)
 }
 func (s *Service) Delivery(c context.Context, actor, id string) (repo.Delivery, error) {
 	return s.repo.Delivery(c, actor, id)
@@ -48,7 +48,7 @@ func (s *Service) Issue(c context.Context, actor, id, note string) (repo.Deliver
 	if strings.TrimSpace(note) == "" {
 		return repo.Delivery{}, fmt.Errorf("issue note is required")
 	}
-	return s.repo.UpdateDelivery(c, actor, id, "", map[string]interface{}{"status": "issue", "notes": strings.TrimSpace(note)})
+	return repo.Delivery{}, repo.ErrUnsupportedIssue
 }
 func (s *Service) ActiveTrip(c context.Context, actor string) (*repo.Trip, error) {
 	return s.repo.ActiveTrip(c, actor)
@@ -70,15 +70,5 @@ func (s *Service) Profile(c context.Context, actor string) (repo.Profile, error)
 	return s.repo.Profile(c, actor)
 }
 func (s *Service) UpdateProfile(c context.Context, actor string, values map[string]interface{}) (repo.Profile, error) {
-	allowed := map[string]string{"fullName": "full_name", "phoneNumber": "phone_number", "nationalId": "national_id", "driversLicenceNo": "drivers_licence_no", "licenceExpiryDate": "licence_expiry_date", "vehicleRegistration": "registration_number", "vehicleType": "vehicle_type", "vehicleCapacity": "capacity", "refrigerationAvailable": "refrigeration_available"}
-	out := map[string]interface{}{}
-	for k, col := range allowed {
-		if v, ok := values[k]; ok {
-			out[col] = v
-		}
-	}
-	if len(out) == 0 {
-		return repo.Profile{}, fmt.Errorf("no supported profile fields supplied")
-	}
-	return s.repo.UpdateProfile(c, actor, out)
+	return s.repo.UpdateProfile(c, actor, values)
 }

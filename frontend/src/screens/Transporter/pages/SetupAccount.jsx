@@ -151,17 +151,14 @@ export function SetupAccount({ user }) {
     try {
       const profileData = {
         fullName: fullname,
-        accountType: signupAccountType,
         nationalId,
-        driversLicense,
-        licenseExpiry,
+        licenseNumber: driversLicense,
         companyName,
-        businessRegNo,
+        businessRegNumber: businessRegNo,
         contactPerson,
-        vehicleReg,
+        vehicleRegistration: vehicleReg,
         vehicleType: vehicleType === 'Other' ? vehicleTypeOther : vehicleType,
         vehicleCapacity,
-        refrigeration,
       }
       await updateProfile(profileData)
       setSaving(false)
