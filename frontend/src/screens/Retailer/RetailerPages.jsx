@@ -7,7 +7,7 @@ import { IconPaths } from '../../components/icons'
 import { useRetailerData } from './components/RetailerDataContext'
 
 export function IncomingBatchesPage() {
-  const { incomingBatches, verifyBatch, receiveBatch } = useRetailerData()
+  const { incomingBatches, verifyBatch, receiveBatch, loadingBatches, batchError, reloadBatches } = useRetailerData()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ id: '', packs: '', from: '', cutType: '', counter: '' })
   const [formError, setFormError] = useState('')
@@ -16,7 +16,7 @@ export function IncomingBatchesPage() {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
-  function handleReceive() {
+  async function handleReceive() {
     const packsNum = Number(form.packs)
     if (!packsNum || packsNum <= 0) {
       setFormError('Enter a valid number of packs.')
@@ -34,16 +34,20 @@ export function IncomingBatchesPage() {
       setFormError('A batch with that ID already exists.')
       return
     }
-    receiveBatch({
-      id: form.id.trim() || undefined,
-      packs: packsNum,
-      from: form.from.trim(),
-      cutType: form.cutType.trim(),
-      counter: form.counter.trim() || 'Display counter A',
-    })
-    setForm({ id: '', packs: '', from: '', cutType: '', counter: '' })
-    setFormError('')
-    setShowForm(false)
+    try {
+      await receiveBatch({
+        id: form.id.trim() || undefined,
+        packs: packsNum,
+        from: form.from.trim(),
+        cutType: form.cutType.trim(),
+        counter: form.counter.trim() || 'Display counter A',
+      })
+      setForm({ id: '', packs: '', from: '', cutType: '', counter: '' })
+      setFormError('')
+      setShowForm(false)
+    } catch (error) {
+      setFormError(error.message || 'Could not save this batch.')
+    }
   }
 
   return (
@@ -77,6 +81,8 @@ export function IncomingBatchesPage() {
       </Panel>
 
       <Panel title="Incoming batches">
+        {loadingBatches && <p style={{ fontSize: 13.5, color: 'var(--ink-600)' }}>Loading batches...</p>}
+        {batchError && <p style={{ fontSize: 13.5, color: 'var(--danger, #c0392b)' }}>{batchError} <button className="link" onClick={reloadBatches}>Retry</button></p>}
         <p style={{ fontSize: 13, color: 'var(--ink-600)', margin: '0 0 12px' }}>
           Click a pending batch to verify it. Verified batches are added to the shelf inventory automatically.
         </p>

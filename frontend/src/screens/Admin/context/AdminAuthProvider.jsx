@@ -37,8 +37,10 @@ export function AdminAuthProvider({ children }) {
       try {
         const fresh = await fetchCurrentAdmin();
         if (!cancelled) setAdmin(fresh);
-      } catch {
-        if (!cancelled) clearSession();
+      } catch (error) {
+        // Only a verified 401 (which adminApi broadcasts) ends a Supabase
+        // session. A 403, 500, or unavailable API must not log the user out.
+        if (import.meta.env.DEV) console.warn("Unable to refresh Admin profile", error);
       } finally {
         if (!cancelled) setCheckingSession(false);
       }

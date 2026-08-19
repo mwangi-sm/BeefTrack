@@ -247,10 +247,17 @@ export function Documents({ user }) {
         subtitle={`${uploadedCount} of ${allDefs.length} documents uploaded`}
       />
 
-      {/* Show skeleton / loading briefly, but always render the UI */}
       {loading && <Panel><LoadingState label="Loading documents…" /></Panel>}
 
-      {!loading && (
+      {!loading && serverData?.available === false && (
+        <Panel title="Document management unavailable">
+          <p style={{ fontSize: 13, color: 'var(--ink-600)', margin: 0 }}>
+            Document uploads are unavailable until BeefTrace has a verified file-storage, upload, status, and deletion contract. The current backend only records document metadata, so this page will not pretend uploads were saved.
+          </p>
+        </Panel>
+      )}
+
+      {!loading && serverData?.available !== false && (
         <>
           {error && (
             <div style={{

@@ -18,11 +18,11 @@ type DB struct {
 // NewDB builds the ONE Supabase client the whole backend should use.
 // Do not construct supabase.Client anywhere else — pass this *DB around instead.
 func NewDB(cfg *config.Config) (*DB, error) {
-	if cfg == nil || cfg.SupabaseURL == "" || cfg.SupabaseKey == "" {
-		return nil, fmt.Errorf("Supabase URL or key is missing")
+	if cfg == nil || cfg.SupabaseURL == "" || cfg.SupabaseServiceRoleKey == "" {
+		return nil, fmt.Errorf("Supabase URL or service-role key is missing")
 	}
 
-	client, err := supabase.NewClient(cfg.SupabaseURL, cfg.SupabaseKey, nil)
+	client, err := supabase.NewClient(cfg.SupabaseURL, cfg.SupabaseServiceRoleKey, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize supabase client: %w", err)
 	}

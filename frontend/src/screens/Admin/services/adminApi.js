@@ -7,6 +7,7 @@
 // so swapping paths/response shapes later only means editing here.
 
 import { authorizedFetch } from "../../../lib/apiClient";
+import { API_BASE_URL } from "../../../services/apiClient";
 import {
   broadcastSessionExpired,
   loginWithSupabase,
@@ -15,10 +16,7 @@ import {
   changeAdminPassword,
 } from "./adminAuth";
 
-const configuredApiUrl = import.meta.env.VITE_API_URL;
-const API_BASE = configuredApiUrl
-  ? `${configuredApiUrl.replace(/\/$/, "")}/admin`
-  : "/api/admin";
+const API_BASE = `${API_BASE_URL}/admin`;
 
 async function request(path, options = {}) {
   const headers = {
@@ -178,7 +176,7 @@ export async function updateOrganizationStatus(orgId, status) {
  * @param {string} orgId
  */
 export async function verifyOrganization(orgId) {
-  return request(`/organizations/${orgId}/verify`, { method: "POST" });
+  return request(`/organizations/${orgId}/verify`, { method: "PATCH" });
 }
 
 // ───────────────────────── Slaughterhouses ─────────────────────────
@@ -221,7 +219,7 @@ export async function updateSlaughterhouseStatus(slaughterhouseId, status) {
  * @param {string} slaughterhouseId
  */
 export async function verifySlaughterhouse(slaughterhouseId) {
-  return request(`/slaughterhouses/${slaughterhouseId}/verify`, { method: "POST" });
+  return request(`/slaughterhouses/${slaughterhouseId}/verify`, { method: "PATCH" });
 }
 
 // ───────────────────────── Traceability ─────────────────────────
@@ -286,7 +284,10 @@ export async function fetchAdminApprovals(filters = {}) {
  * @param {string} approvalId
  */
 export async function approveRequest(approvalId) {
-  return request(`/approvals/${approvalId}/approve`, { method: "POST" });
+  return request(`/approvals/${approvalId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "approved" }),
+  });
 }
 
 /**
@@ -295,9 +296,9 @@ export async function approveRequest(approvalId) {
  * @param {string} [reason]
  */
 export async function rejectRequest(approvalId, reason) {
-  return request(`/approvals/${approvalId}/reject`, {
-    method: "POST",
-    body: JSON.stringify({ reason: reason || "" }),
+  return request(`/approvals/${approvalId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "rejected", reason: reason || "" }),
   });
 }
 

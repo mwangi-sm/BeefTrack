@@ -12,7 +12,8 @@ import (
 type Config struct {
 	Port            string
 	SupabaseURL     string
-	SupabaseKey     string
+	SupabaseKey            string
+	SupabaseServiceRoleKey string
 	SupabaseIssuer  string
 	SupabaseJWKSURL string
 	AllowedOrigins  []string
@@ -29,7 +30,8 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Port:            getEnv("PORT", "8080"),
 		SupabaseURL:     supabaseURL,
-		SupabaseKey:     getEnv("SUPABASE_KEY", ""),
+		SupabaseKey:            getEnv("SUPABASE_KEY", ""),
+		SupabaseServiceRoleKey: getEnv("SUPABASE_SERVICE_ROLE_KEY", ""),
 		SupabaseIssuer:  getEnv("SUPABASE_JWT_ISSUER", supabaseURL+"/auth/v1"),
 		SupabaseJWKSURL: getEnv("SUPABASE_JWKS_URL", supabaseURL+"/auth/v1/.well-known/jwks.json"),
 		// Explicit development origins are safe defaults. Deployments must set
@@ -41,6 +43,9 @@ func Load() (*Config, error) {
 	}
 	if cfg.SupabaseKey == "" {
 		return nil, fmt.Errorf("missing required environment variable: SUPABASE_KEY")
+	}
+	if cfg.SupabaseServiceRoleKey == "" {
+		return nil, fmt.Errorf("missing required environment variable: SUPABASE_SERVICE_ROLE_KEY")
 	}
 	return cfg, nil
 }
