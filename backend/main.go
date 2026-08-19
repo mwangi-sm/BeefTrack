@@ -289,6 +289,7 @@ func main() {
 
 	// Register admin routes
 	routes.AdminRoutes(mux, verifier, db)
+	routes.TransporterRoutes(mux, verifier, db)
 
 	// --- Health Check ---
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {

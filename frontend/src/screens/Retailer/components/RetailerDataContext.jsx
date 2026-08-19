@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 
 const RetailerDataContext = createContext(null)
 
@@ -29,6 +29,7 @@ const initialDeliveries = []
 import { useEffect } from 'react'
 
 import { onCustomerScan } from '../../../lib/eventBus'
+import { createRetailerBatch, fetchRetailerBatches } from '../../../services/retailer/batches'
 
 export function RetailerDataProvider({ children, retailerId }) {
   const [incomingBatches, setIncomingBatches] = useState(initialIncomingBatches)
@@ -36,11 +37,27 @@ export function RetailerDataProvider({ children, retailerId }) {
   const [sales, setSales] = useState(initialSales)
   const [notifications, setNotifications] = useState(initialNotifications)
   const [deliveries, setDeliveries] = useState(initialDeliveries)
+  const [loadingBatches, setLoadingBatches] = useState(true)
+  const [batchError, setBatchError] = useState('')
 
-  function receiveBatch({ id, packs, from, cutType = 'Beef cuts', counter = 'Display counter A' }) {
+  const reloadBatches = useCallback(async () => {
+    setLoadingBatches(true)
+    setBatchError('')
+    try {
+      setIncomingBatches(await fetchRetailerBatches(retailerId))
+    } catch (error) {
+      setBatchError(error.message || 'Could not load incoming batches.')
+    } finally {
+      setLoadingBatches(false)
+    }
+  }, [retailerId])
+
+  async function receiveBatch({ id, packs, from, cutType = 'Beef cuts', counter = 'Display counter A' }) {
     const normalizedCut = normalizeCutType(cutType)
+    const batchId = id || nextId('LOT')
+    await createRetailerBatch({ retailerId, id: batchId, packs, from })
     setIncomingBatches((prev) => [
-      { id: id || nextId('LOT'), packs, from, cutType: normalizedCut, counter, status: 'pending' },
+      { id: batchId, packs, from, cutType: normalizedCut, counter, status: 'pending' },
       ...prev,
     ])
   }
@@ -222,6 +239,9 @@ export function RetailerDataProvider({ children, retailerId }) {
     sales,
     notifications,
     deliveries,
+    loadingBatches,
+    batchError,
+    reloadBatches,
     stats,
     receiveBatch,
     verifyBatch,
@@ -245,12 +265,19 @@ export function RetailerDataProvider({ children, retailerId }) {
           { id: nextId('note'), type: 'scan', text: `${customer || 'A customer'} scanned ${lot}${packNumber ? `, pack #${packNumber}` : ''}`, lot, time: 'Just now' },
           ...prev,
         ])
+      // eslint-disable-next-line no-unused-vars
       } catch (err) {
         // ignore
       }
     })
     return unsubscribe
   }, [retailerId])
+
+  useEffect(() => {
+    // This request is the provider's external-data synchronization point.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    reloadBatches()
+  }, [reloadBatches])
 
   return <RetailerDataContext.Provider value={value}>{children}</RetailerDataContext.Provider>
 }

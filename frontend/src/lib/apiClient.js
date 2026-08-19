@@ -1,4 +1,5 @@
 import { getSupabase } from "./supabase";
+export { apiRequest, API_BASE_URL, ApiError } from "../services/apiClient";
 
 // All requests to protected backend routes must pass through this helper so
 // they carry the current Supabase access token after refresh/rotation.

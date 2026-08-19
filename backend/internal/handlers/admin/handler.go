@@ -151,6 +151,22 @@ func (h *Handler) Reject(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.Success(w, 200, "Approval rejected", nil)
 }
+func (h *Handler) Review(w http.ResponseWriter, r *http.Request) {
+	var p struct {
+		Status string `json:"status"`
+		Reason string `json:"reason"`
+	}
+	if json.NewDecoder(r.Body).Decode(&p) != nil {
+		utils.Fail(w, 400, "Invalid request.", "invalid JSON")
+		return
+	}
+	a, _ := actor(r)
+	if e := h.service.Review(r.Context(), r.PathValue("id"), a, p.Status, strings.TrimSpace(p.Reason)); e != nil {
+		fail(w, e)
+		return
+	}
+	utils.Success(w, 200, "Approval reviewed", nil)
+}
 func (h *Handler) Notifications(w http.ResponseWriter, r *http.Request) {
 	a, _ := actor(r)
 	q := r.URL.Query()
