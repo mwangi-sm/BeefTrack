@@ -56,6 +56,7 @@ export function UserManagement() {
   const [status, setStatus] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [actioningId, setActioningId] = useState(null);
   const [actionError, setActionError] = useState("");
 
@@ -65,10 +66,16 @@ export function UserManagement() {
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
-  const { data: users, loading, error, reload } = useAsync(
-    () => fetchAdminUsers({ role, status, search: search || undefined }),
-    [role, status, search]
+  useEffect(() => {
+    setPage(1);
+  }, [role, status, search]);
+
+  const { data: usersPage, loading, error, reload } = useAsync(
+    () => fetchAdminUsers({ role, status, search: search || undefined, page, pageSize: 25 }),
+    [role, status, search, page]
   );
+  const users = usersPage?.items || [];
+  const totalPages = Math.max(1, Math.ceil((usersPage?.total || 0) / (usersPage?.pageSize || 25)));
 
   async function handleToggleStatus(user) {
     const nextStatus = user.accountStatus === "active" ? "suspended" : "active";
@@ -202,6 +209,13 @@ export function UserManagement() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {!loading && !error && totalPages > 1 && (
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
+            <button className="btn btn-outline" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</button>
+            <span style={{ alignSelf: "center", fontSize: 13 }}>Page {page} of {totalPages}</span>
+            <button className="btn btn-outline" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>Next</button>
           </div>
         )}
       </Panel>

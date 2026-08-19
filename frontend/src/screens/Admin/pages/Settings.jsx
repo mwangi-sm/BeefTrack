@@ -171,7 +171,12 @@ function PlatformSettings() {
   return (
     <Panel title="Platform settings">
       {loading && <LoadingState label="Loading platform settings" />}
-      {!loading && error && <ErrorState message="Couldn't load platform settings." onRetry={reload} />}
+      {!loading && error && (
+        <ErrorState
+          message={error.status === 501 ? "Platform settings are not available in the current backend." : "Couldn't load platform settings."}
+          onRetry={reload}
+        />
+      )}
       {!loading && !error && !settings && (
         <EmptyState
           icon={IconPaths.gear}

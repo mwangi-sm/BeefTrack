@@ -57,6 +57,7 @@ export function SetupAccount() {
 
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   const [capacity, setCapacity] = useState('')
   const [operatingHours, setOperatingHours] = useState('')
@@ -98,6 +99,7 @@ export function SetupAccount() {
 
   async function handleFinish() {
     setSaving(true)
+    setSaveError('')
     try {
       await updateProfile({
         fullName: fullname,
@@ -111,12 +113,12 @@ export function SetupAccount() {
         supervisorName,
         staffCount,
       })
-    } catch {
-      // proceed even if update fails
-    } finally {
       window.localStorage.setItem('beef_trace_slaughterhouse_setup_done', 'true')
-      setSaving(false)
       navigate('/dashboard/slaughterhouse', { replace: true })
+    } catch (error) {
+      setSaveError(error.message || 'Unable to save facility setup.')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -355,6 +357,11 @@ export function SetupAccount() {
 
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
         {renderStepIndicator()}
+        {saveError && (
+          <div role="alert" style={{ marginBottom: 16, padding: '10px 12px', borderRadius: 8, background: 'var(--rust-50, #fdf1ec)', color: 'var(--rust-600)', fontSize: 13 }}>
+            {saveError}
+          </div>
+        )}
         {stepRenderers[step]()}
 
         <div style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -396,6 +396,7 @@ func main() {
 	// Register admin routes
 	routes.AdminRoutes(mux, verifier, db)
 	routes.TransporterRoutes(mux, verifier, db)
+	routes.SlaughterhouseRoutes(mux, verifier, db)
 
 	// --- Health Check ---
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -754,9 +755,9 @@ func main() {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(`{"status":"OK","message":"Retailer batch registered successfully!"}`))
 	})
-	// ==========================================
-	// SLAUGHTERHOUSE / PROCESSOR API ENDPOINTS
-	// ==========================================
+	// Legacy Slaughterhouse handlers were moved to routes.SlaughterhouseRoutes.
+	// The structured routes enforce Supabase JWT role and organization ownership.
+	/*
 
 	// 1. Slaughterhouse Profiles
 	mux.HandleFunc("GET /api/slaughterhouse/profiles", func(w http.ResponseWriter, r *http.Request) {
@@ -1133,6 +1134,7 @@ func main() {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(`{"status":"OK","message":"Slaughterhouse shipment registered successfully!"}`))
 	})
+	*/
 	// ==========================================
 	// PROCESSOR API ENDPOINTS
 	// ==========================================

@@ -3,7 +3,7 @@ import { DashHead } from "../../../components/DashHead";
 import { Panel, LoadingState, ErrorState, EmptyState } from "../../../components/DashboardBits";
 import { Icon, IconPaths } from "../../../components/icons";
 import { useAsync } from "../services/useAdmin";
-import { fetchReportCatalog, runReport, reportDownloadUrl } from "../services/adminApi";
+import { fetchReportCatalog, runReport } from "../services/adminApi";
 
 const CATEGORY_ICONS = {
   animal: IconPaths.animal,
@@ -69,7 +69,10 @@ export function Reports() {
       <Panel title="Report catalog">
         {catalogLoading && <LoadingState label="Loading report catalog" />}
         {!catalogLoading && catalogError && (
-          <ErrorState message="Couldn't load the report catalog." onRetry={reloadCatalog} />
+          <ErrorState
+            message={catalogError.status === 501 ? "Reports are not available in the current backend." : "Couldn't load the report catalog."}
+            onRetry={reloadCatalog}
+          />
         )}
         {!catalogLoading && !catalogError && (!catalog || catalog.length === 0) && (
           <EmptyState icon={IconPaths.sales} title="No reports available yet" />
@@ -95,21 +98,7 @@ export function Reports() {
       </Panel>
 
       {activeReport && (
-        <Panel
-          title={activeReport.title}
-          action={
-            runState === "ready" && runResult?.rows?.length ? (
-              <a
-                className="btn btn-outline"
-                style={{ fontSize: 12.5, padding: "6px 14px" }}
-                href={reportDownloadUrl(activeReport.id, { from: dateFrom || undefined, to: dateTo || undefined })}
-              >
-                <Icon size={14} style={{ marginRight: 4 }}>{IconPaths.download}</Icon>
-                Export CSV
-              </a>
-            ) : undefined
-          }
-        >
+        <Panel title={activeReport.title}>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 18 }}>
             <div className="field" style={{ minWidth: 160 }}>
               <label>From</label>

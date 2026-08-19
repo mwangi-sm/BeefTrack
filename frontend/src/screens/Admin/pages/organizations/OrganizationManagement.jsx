@@ -70,6 +70,7 @@ export function OrganizationManagement({ fixedType, excludeTypes, title, subtitl
   const [status, setStatus] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [actioningId, setActioningId] = useState(null);
   const [actionError, setActionError] = useState("");
 
@@ -81,17 +82,25 @@ export function OrganizationManagement({ fixedType, excludeTypes, title, subtitl
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
-  const { data: organizations, loading, error, reload } = useAsync(async () => {
-    const results = await fetchAdminOrganizations({
+  useEffect(() => {
+    setPage(1);
+  }, [fixedType, type, status, search]);
+
+  const { data: organizationsPage, loading, error, reload } = useAsync(async () => {
+    const result = await fetchAdminOrganizations({
       type: fixedType || type,
       status,
       search: search || undefined,
+      page,
+      pageSize: 25,
     });
     if (excludeList) {
-      return results.filter((org) => !excludeList.includes(org.type));
+      return { ...result, items: result.items.filter((org) => !excludeList.includes(org.type)) };
     }
-    return results;
-  }, [fixedType, excludeTypes, type, status, search]);
+    return result;
+  }, [fixedType, excludeTypes, type, status, search, page]);
+  const organizations = organizationsPage?.items || [];
+  const totalPages = Math.max(1, Math.ceil((organizationsPage?.total || 0) / (organizationsPage?.pageSize || 25)));
 
   async function handleToggleStatus(org) {
     const nextStatus = org.status === "active" ? "suspended" : "active";
@@ -252,6 +261,13 @@ export function OrganizationManagement({ fixedType, excludeTypes, title, subtitl
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {!loading && !error && totalPages > 1 && (
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
+            <button className="btn btn-outline" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</button>
+            <span style={{ alignSelf: "center", fontSize: 13 }}>Page {page} of {totalPages}</span>
+            <button className="btn btn-outline" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>Next</button>
           </div>
         )}
       </Panel>
