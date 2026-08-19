@@ -213,7 +213,7 @@ function TransporterHome({ fullname }) {
   );
 }
 
-export function TransporterDashboard({ fullname, onLogout, onToggleTheme }) {
+export function TransporterDashboard({ user, fullname, onLogout, onToggleTheme }) {
   const navigate = useNavigate();
 
   return (
@@ -222,7 +222,9 @@ export function TransporterDashboard({ fullname, onLogout, onToggleTheme }) {
       onLogout={onLogout}
       onToggleTheme={onToggleTheme}
     >
-      {window.localStorage.getItem("beef_trace_transporter_setup_done") !== "true" && (
+      {/* There is no repository-backed setup-completion value, so browser
+          storage must not decide whether setup is complete. */}
+      {
         <div style={{
           display: "flex",
           alignItems: "center",
@@ -247,16 +249,16 @@ export function TransporterDashboard({ fullname, onLogout, onToggleTheme }) {
             Complete setup
           </button>
         </div>
-      )}
+      }
       <Routes>
         <Route index element={<TransporterHome fullname={fullname} />} />
-        <Route path="setup" element={<SetupAccount />} />
+        <Route path="setup" element={<SetupAccount user={user} />} />
         <Route path="deliveries" element={<AssignedDeliveries />} />
         <Route path="deliveries/:id" element={<DeliveryDetails />} />
         <Route path="trip" element={<CurrentTrip />} />
         <Route path="route" element={<RouteMap />} />
         <Route path="history" element={<DeliveryHistory />} />
-        <Route path="documents" element={<Documents />} />
+        <Route path="documents" element={<Documents user={user} />} />
         <Route
           path="traceability"
           element={
@@ -269,7 +271,7 @@ export function TransporterDashboard({ fullname, onLogout, onToggleTheme }) {
           }
         />
         <Route path="notifications" element={<Notifications />} />
-        <Route path="profile" element={<Profile />} />
+        <Route path="profile" element={<Profile user={user} />} />
         <Route
           path="settings"
           element={

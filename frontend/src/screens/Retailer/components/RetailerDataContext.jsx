@@ -26,7 +26,11 @@ const initialNotifications = []
 // that the retailer can advance as goods move from distributor → store.
 const initialDeliveries = []
 
-export function RetailerDataProvider({ children }) {
+import { useEffect } from 'react'
+
+import { onCustomerScan } from '../../../lib/eventBus'
+
+export function RetailerDataProvider({ children, retailerId }) {
   const [incomingBatches, setIncomingBatches] = useState(initialIncomingBatches)
   const [inventory, setInventory] = useState(initialInventory)
   const [sales, setSales] = useState(initialSales)
@@ -228,6 +232,25 @@ export function RetailerDataProvider({ children }) {
     markDeparted,
     markDelivered,
   }
+
+  // Subscribe to customer scans emitted elsewhere in the app. If a
+  // `retailerId` is provided only apply scans targeted to this retailer;
+  // otherwise accept all for demo purposes.
+  useEffect(() => {
+    const unsubscribe = onCustomerScan((payload) => {
+      try {
+        const { lot, packNumber, retailerId: targetRetailerId, customer } = payload || {}
+        if (targetRetailerId && retailerId && targetRetailerId !== retailerId) return
+        setNotifications((prev) => [
+          { id: nextId('note'), type: 'scan', text: `${customer || 'A customer'} scanned ${lot}${packNumber ? `, pack #${packNumber}` : ''}`, lot, time: 'Just now' },
+          ...prev,
+        ])
+      } catch (err) {
+        // ignore
+      }
+    })
+    return unsubscribe
+  }, [retailerId])
 
   return <RetailerDataContext.Provider value={value}>{children}</RetailerDataContext.Provider>
 }

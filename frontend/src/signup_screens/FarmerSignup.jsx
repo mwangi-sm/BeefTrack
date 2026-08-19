@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Icon, IconPaths } from '../components/icons'
 import { FieldError, CountySelect, PasswordField, SignupShell, NameFields } from '../signup_screens/SignupKit'
-import { PHONE_RE } from '../signup_screens/signupConstants'
+import { EMAIL_RE, PHONE_RE } from '../signup_screens/signupConstants'
 
 const initialState = {
   firstName: '',
   lastName: '',
+  email: '',
   nationalId: '',
   phone: '',
   farmName: '',
@@ -25,6 +26,8 @@ export function FarmerSignup({ onSubmit = () => {}, onBack = () => {}, onLogin =
     const e = {}
     if (!form.firstName.trim()) e.firstName = 'First name is required.'
     if (!form.lastName.trim()) e.lastName = 'Last name is required.'
+    if (!form.email.trim()) e.email = 'Email is required.'
+    else if (!EMAIL_RE.test(form.email.trim())) e.email = 'Enter a valid email address.'
     if (!form.phone.trim()) e.phone = 'Phone number is required.'
     else if (!PHONE_RE.test(form.phone.trim())) e.phone = 'Enter a valid Kenyan phone number.'
     if (!form.farmName.trim()) e.farmName = 'Farm name is required.'
@@ -41,8 +44,9 @@ export function FarmerSignup({ onSubmit = () => {}, onBack = () => {}, onLogin =
     const v = validate()
     setErrors(v)
     if (Object.keys(v).length === 0) {
+      const normalized = { ...form, email: form.email.trim() }
       // eslint-disable-next-line no-unused-vars
-      const { confirmPassword, ...rest } = form
+      const { confirmPassword, ...rest } = normalized
       onSubmit({ role: 'farmer', ...rest })
     }
   }
@@ -68,14 +72,20 @@ export function FarmerSignup({ onSubmit = () => {}, onBack = () => {}, onLogin =
 
         <div className="field-row">
           <div className="field">
-            <label>National ID / Passport <span style={{ fontWeight: 400 }}>(optional)</span></label>
-            <input value={form.nationalId} onChange={set('nationalId')} placeholder="ID or passport number" />
+            <label>Email Address</label>
+            <input type="email" value={form.email} onChange={set('email')} placeholder="you@example.com" />
+            {errors.email && <FieldError>{errors.email}</FieldError>}
           </div>
           <div className="field">
             <label>Phone number</label>
             <input type="tel" value={form.phone} onChange={set('phone')} placeholder="07XX XXX XXX" />
             {errors.phone && <FieldError>{errors.phone}</FieldError>}
           </div>
+        </div>
+
+        <div className="field">
+          <label>National ID / Passport <span style={{ fontWeight: 400 }}>(optional)</span></label>
+          <input value={form.nationalId} onChange={set('nationalId')} placeholder="ID or passport number" />
         </div>
 
         <div className="field">

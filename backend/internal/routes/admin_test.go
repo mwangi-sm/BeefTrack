@@ -21,15 +21,21 @@ func TestAdminProtectedRoutesRequireBearerToken(t *testing.T) {
 		path   string
 	}{
 		{method: http.MethodPost, path: "/api/admin/logout"},
-		{method: http.MethodGet, path: "/api/admin/dashboard/users-summary"},
-		{method: http.MethodGet, path: "/api/admin/dashboard/traceability-summary"},
-		{method: http.MethodGet, path: "/api/admin/dashboard/charts"},
-		{method: http.MethodGet, path: "/api/admin/approvals"},
-		{method: http.MethodGet, path: "/api/admin/users"},
-		{method: http.MethodGet, path: "/api/admin/activity"},
-		{method: http.MethodGet, path: "/api/admin/alerts"},
+		{method: http.MethodGet, path: "/api/admin/overview"},
 		{method: http.MethodGet, path: "/api/admin/profile"},
 		{method: http.MethodGet, path: "/api/admin/settings"},
+		{method: http.MethodGet, path: "/api/admin/users"},
+		{method: http.MethodPatch, path: "/api/admin/users/user-id/status"},
+		{method: http.MethodGet, path: "/api/admin/organizations"},
+		{method: http.MethodPost, path: "/api/admin/organizations/org-id/verify"},
+		{method: http.MethodGet, path: "/api/admin/slaughterhouses"},
+		{method: http.MethodGet, path: "/api/admin/traceability?query=tag"},
+		{method: http.MethodGet, path: "/api/admin/approvals"},
+		{method: http.MethodPost, path: "/api/admin/approvals/approval-id/approve"},
+		{method: http.MethodGet, path: "/api/admin/reports"},
+		{method: http.MethodGet, path: "/api/admin/audit-logs"},
+		{method: http.MethodGet, path: "/api/admin/notifications"},
+		{method: http.MethodPost, path: "/api/admin/notifications/mark-all-read"},
 	}
 
 	for _, route := range protected {

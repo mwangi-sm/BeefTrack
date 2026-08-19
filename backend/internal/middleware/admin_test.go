@@ -20,11 +20,11 @@ func TestRequireAdminAllowsOnlyAdministratorRoles(t *testing.T) {
 		want       int
 	}{
 		{name: "missing claims", want: http.StatusForbidden},
-		{name: "admin", role: "admin", withClaims: true, want: http.StatusNoContent},
+		{name: "administrator", role: "administrator", withClaims: true, want: http.StatusNoContent},
 		{name: "super admin", role: "super_admin", withClaims: true, want: http.StatusNoContent},
 		{name: "other role", role: "farmer", withClaims: true, want: http.StatusForbidden},
+		{name: "legacy admin role", role: "admin", withClaims: true, want: http.StatusForbidden},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/admin", nil)
@@ -34,11 +34,10 @@ func TestRequireAdminAllowsOnlyAdministratorRoles(t *testing.T) {
 					AppMetadata: types.AppMetadata{Role: tt.role},
 				}))
 			}
-
-			recorder := httptest.NewRecorder()
-			RequireAdmin(next).ServeHTTP(recorder, req)
-			if recorder.Code != tt.want {
-				t.Fatalf("status = %d, want %d", recorder.Code, tt.want)
+			rec := httptest.NewRecorder()
+			RequireAdmin(next).ServeHTTP(rec, req)
+			if rec.Code != tt.want {
+				t.Fatalf("status = %d, want %d", rec.Code, tt.want)
 			}
 		})
 	}
@@ -53,7 +52,7 @@ func TestRequireRoleRestrictsSuperAdminRoutes(t *testing.T) {
 		role string
 		want int
 	}{
-		{role: "admin", want: http.StatusForbidden},
+		{role: "administrator", want: http.StatusForbidden},
 		{role: "super_admin", want: http.StatusNoContent},
 	} {
 		req := httptest.NewRequest(http.MethodGet, "/admin/settings", nil)

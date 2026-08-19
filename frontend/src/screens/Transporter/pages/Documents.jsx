@@ -141,12 +141,10 @@ function DocumentRow({ docKey, label, doc, isUploading, onUpload, onDelete, onVi
   )
 }
 
-export function Documents() {
+export function Documents({ user }) {
   const { data: serverData, loading, error, reload } = useAsync(getDocuments, [])
   const [documents, setDocuments] = useState({})
-  const [transporterType, setTransporterType] = useState(() => {
-    return window.localStorage.getItem('beef_trace_transporter_account_type') || 'individual'
-  })
+  const [transporterType, setTransporterType] = useState(user?.accountType || 'individual')
   const [uploading, setUploading] = useState(null)
   const [uploadError, setUploadError] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
@@ -158,11 +156,11 @@ export function Documents() {
     if (serverData) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setDocuments(serverData.documents || {})
-      if (serverData.transporterType) {
+      if (!user?.accountType && serverData.transporterType) {
         setTransporterType(serverData.transporterType)
       }
     }
-  }, [serverData])
+  }, [serverData, user?.accountType])
 
   const isCompany = transporterType === 'company'
   const allDefs = [...REQUIRED_DOCS, ...(isCompany ? COMPANY_DOCS : []), ...OPTIONAL_DOCS]

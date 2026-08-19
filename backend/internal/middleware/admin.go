@@ -24,7 +24,7 @@ func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
 
 // RequireAdmin permits both standard administrators and super administrators.
 func RequireAdmin(next http.Handler) http.Handler {
-	return RequireRole("admin", "super_admin")(next)
+	return RequireRole("administrator", "super_admin")(next)
 }
 
 func roleAllowed(role string, allowedRoles []string) bool {

@@ -117,7 +117,7 @@ function LoginRoute() {
       }
 
       const user = toAuthenticatedUser(data.user);
-      if (user.role === "admin" || user.role === "super_admin") {
+      if (user.role === "administrator" || user.role === "super_admin") {
         navigate("/admin", { replace: true });
         return;
       }
@@ -163,12 +163,11 @@ function SignupRoute() {
       }
 
       const metadata = buildSignupMetadata({ ...formData, role: signupRole });
-      const credentials = isEmail(formData.email || "")
-        ? { email: formData.email.trim(), password: formData.password }
-        : { phone: formData.phone.trim(), password: formData.password };
-
       const { data, error } = await getSupabase().auth.signUp({
-        ...credentials,
+        // Dedicated signup screens collect an email. Phone remains metadata,
+        // not the authentication identifier for signup.
+        email: formData.email.trim(),
+        password: formData.password,
         options: { data: metadata },
       });
       if (error) throw error;

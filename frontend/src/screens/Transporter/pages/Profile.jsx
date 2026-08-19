@@ -134,7 +134,7 @@ const INITIAL_FORM = {
   photo: null,
 }
 
-export function Profile() {
+export function Profile({ user }) {
   const navigate = useNavigate()
   const { data: profile, loading, error, reload } = useAsync(getProfile, [])
   const [form, setForm] = useState(INITIAL_FORM)
@@ -149,9 +149,17 @@ export function Profile() {
   useEffect(() => {
     if (profile) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setForm((prev) => ({ ...prev, ...profile }))
+      setForm((prev) => ({
+        ...prev,
+        ...profile,
+        // Session identity takes precedence over the mock profile fixture.
+        fullName: user?.fullname || profile.fullName,
+        email: user?.email || profile.email,
+        phone: user?.phone || profile.phone,
+        transporterType: user?.accountType || profile.transporterType,
+      }))
     }
-  }, [profile])
+  }, [profile, user])
 
   const isComplete = form.licenseNumber?.trim()
 

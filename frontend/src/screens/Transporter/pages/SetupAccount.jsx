@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { Icon, IconPaths } from '../../../components/icons'
 import { Panel } from '../../../components/DashboardBits'
 import { DashHead } from '../../../components/DashHead'
-import { getCurrentMockUser } from '../../../lib/mockAuth'
 import { updateProfile } from '../services/transporterApi'
 
 const checkIcon = (
@@ -52,15 +51,15 @@ const STEPS = [
 
 const VEHICLE_TYPES = ['Truck', 'Refrigerated truck', 'Van']
 
-export function SetupAccount() {
+export function SetupAccount({ user }) {
   const navigate = useNavigate()
-  const user = getCurrentMockUser()
   const fullname = user?.fullname || ''
   const signupAccountType = user?.accountType || 'individual'
   const isCompany = signupAccountType === 'company'
 
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   // Step 1 — Transporter Details
   const [nationalId, setNationalId] = useState('')
@@ -147,6 +146,7 @@ export function SetupAccount() {
   }
 
   async function handleFinish() {
+    setSaveError('')
     setSaving(true)
     try {
       const profileData = {
@@ -164,13 +164,11 @@ export function SetupAccount() {
         refrigeration,
       }
       await updateProfile(profileData)
-    } catch {
-      // proceed even if update fails
-    } finally {
-      window.localStorage.setItem('beef_trace_transporter_setup_done', 'true')
-      window.localStorage.setItem('beef_trace_transporter_account_type', signupAccountType)
       setSaving(false)
       navigate('/dashboard/transporter', { replace: true })
+    } catch (error) {
+      setSaveError(error.message || 'Unable to save your account setup. Please try again.')
+      setSaving(false)
     }
   }
 
@@ -463,6 +461,12 @@ export function SetupAccount() {
 
         {renderStepIndicator()}
         {stepRenderers[step]()}
+
+        {saveError && (
+          <p role="alert" style={{ margin: '16px 0 0', color: 'var(--rust-600)', fontSize: 13 }}>
+            {saveError}
+          </p>
+        )}
 
         <div style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
