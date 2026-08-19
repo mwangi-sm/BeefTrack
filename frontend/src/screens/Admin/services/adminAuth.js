@@ -15,7 +15,7 @@ function toAdmin(user) {
 }
 
 function isAdminRole(role) {
-  return role === "admin" || role === "super_admin";
+  return role === "administrator" || role === "super_admin";
 }
 
 export async function loginWithSupabase(identifier, password) {
@@ -63,6 +63,23 @@ export async function signOutAdmin() {
   } finally {
     clearAdminSession();
   }
+}
+
+// Self-service profile edit — updates the Supabase Auth user's metadata
+// directly, same as login does. No Go endpoint needed since Supabase Auth
+// owns this data; the profiles table mirror (if any) is Team 2's concern.
+export async function updateAdminProfile({ fullName }) {
+  const { data, error } = await getSupabase().auth.updateUser({
+    data: { full_name: fullName },
+  });
+  if (error) throw error;
+  return toAdmin(data.user);
+}
+
+// Self-service password change — same rationale as updateAdminProfile.
+export async function changeAdminPassword(newPassword) {
+  const { error } = await getSupabase().auth.updateUser({ password: newPassword });
+  if (error) throw error;
 }
 
 export const SESSION_EXPIRED_EVENT = "beef_trace_admin_session_expired";

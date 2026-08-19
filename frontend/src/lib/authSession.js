@@ -1,4 +1,4 @@
-const RESERVED_ROLES = new Set(["admin", "super_admin"]);
+const RESERVED_ROLES = new Set(["admin", "administrator", "super_admin"]);
 
 export const SELF_SERVICE_ROLES = new Set([
   "farmer",
@@ -57,6 +57,7 @@ export function toAuthenticatedUser(user) {
     accountStatus: user.user_metadata?.account_status || "active",
     verificationStatus: user.user_metadata?.verification_status || "unverified",
     verified: user.user_metadata?.verified === true,
+    accountType: user.user_metadata?.account_type || "",
     fullname: user.user_metadata?.full_name || user.user_metadata?.fullname || user.email || user.phone || "",
   };
 }

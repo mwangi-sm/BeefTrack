@@ -21,7 +21,7 @@ export function Footer({ onEnroll, onLogin }) {
           </ul>
         </div>
 
-        <div className="footer-col">
+        <div className="footer-col" id="contact">
           <h4>Contact</h4>
           <ul className="footer-contact">
             <li>

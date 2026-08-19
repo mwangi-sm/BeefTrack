@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { emitCustomerScan } from '../lib/eventBus'
 import { DashboardShell } from '../components/DashboardShell'
 import { StatCard, Panel } from '../components/DashboardBits'
 import { Icon, IconPaths } from '../components/icons'
@@ -15,7 +16,10 @@ const chainSteps = [
 ]
 
 const createMockData = (user) => {
-  const baseName = user?.name || user?.firstName ? `${user?.firstName || ''} ${user?.lastName || ''}`.trim() : 'Amina Yusuf'
+  const baseName =
+    user?.fullname || user?.full_name || user?.name ||
+    (user?.firstName || user?.lastName ? `${user?.firstName || ''} ${user?.lastName || ''}`.trim() : '') ||
+    'Amina Yusuf'
   return {
     profile: {
       name: baseName || 'Amina Yusuf',
@@ -129,6 +133,13 @@ export function ConsumerDashboard({ onLogout, onToggleTheme, user }) {
     ])
     setActiveView('scan-history')
     setCameraOpen(false)
+
+    // Broadcast the scan so retailers can receive a customer-scan notification
+    try {
+      emitCustomerScan({ lot: nextScan.id, packNumber: 1, customer: profile.name })
+    } catch {
+      // ignore bus errors in mock mode
+    }
   }
 
   const handleSubmitConcern = (event) => {
@@ -182,6 +193,15 @@ export function ConsumerDashboard({ onLogout, onToggleTheme, user }) {
           Open the scanner to verify the beef’s journey from the farm to your table.
         </p>
         <button className="btn btn-primary" style={{ padding: '13px 30px' }} onClick={() => setActiveView('scanner')}>Open scanner</button>
+      </div>
+
+      <div style={{ marginTop: 14 }}>
+        <Panel title="Retailer" action={<button type="button" className="link" onClick={() => setActiveView('retailer-profile')}>View profile</button>}>
+          <div className="consumer-detail-card">
+            <h4>{chainSteps.find((s) => s.who === 'Retailer')?.label || 'Retailer'}</h4>
+            <p style={{ margin: 0 }}>Contact the retailer for stock or product questions.</p>
+          </div>
+        </Panel>
       </div>
 
       <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginTop: 22 }}>
@@ -439,6 +459,27 @@ export function ConsumerDashboard({ onLogout, onToggleTheme, user }) {
     </>
   )
 
+  const renderRetailerProfileView = () => (
+    <>
+      <div className="dash-head">
+        <div>
+          <p className="eyebrow" style={{ color: 'var(--gold-600)' }}>Retailer</p>
+          <h1>{chainSteps.find((s) => s.who === 'Retailer')?.label || 'Retailer'}</h1>
+          <p className="sub">View basic retailer info and contact details.</p>
+        </div>
+        <button type="button" className="btn btn-outline" onClick={() => setActiveView('home')}>Back home</button>
+      </div>
+      <div className="panel screen-surface">
+        <div className="consumer-detail-card">
+          <h4>{chainSteps.find((s) => s.who === 'Retailer')?.label}</h4>
+          <p><strong>Location:</strong> Greenview Market</p>
+          <p><strong>Contact:</strong> +254 700 000 000</p>
+          <p><strong>Trust:</strong> Verified retailer</p>
+        </div>
+      </div>
+    </>
+  )
+
   return (
     <DashboardShell
       roleLabel="CONSUMER"
@@ -459,6 +500,7 @@ export function ConsumerDashboard({ onLogout, onToggleTheme, user }) {
       {activeView === 'reviews' && renderReviewsView()}
       {activeView === 'report-concern' && renderConcernView()}
       {activeView === 'scanner' && renderScannerView()}
+      {activeView === 'retailer-profile' && renderRetailerProfileView()}
     </DashboardShell>
   )
 }

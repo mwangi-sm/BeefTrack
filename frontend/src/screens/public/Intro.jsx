@@ -136,13 +136,41 @@ export function Intro({ onPickRole, onLogin }) {
           padding: 20px 32px;
           pointer-events: none; /* only the buttons inside should be clickable */
         }
+        .site-header-right {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
         .site-header .btn {
           pointer-events: auto;
+        }
+        .site-header-link {
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(255, 255, 255, 0.26);
+          color: var(--ink-900, #2a2019);
+          backdrop-filter: blur(8px);
+          box-shadow: 0 2px 8px rgba(42, 32, 25, 0.06);
+          transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+        }
+        .site-header-link:hover {
+          background: rgba(255, 255, 255, 0.22);
+          border-color: rgba(255, 255, 255, 0.5);
+          box-shadow: 0 8px 18px rgba(42, 32, 25, 0.12);
+          transform: translateY(-1px);
         }
         @media (max-width: 640px) {
           .site-header {
             padding: 14px 16px;
             gap: 8px;
+          }
+          .site-header-right {
+            gap: 6px;
+          }
+          .site-header-link {
+            padding: 8px 12px;
+            font-size: 12px;
           }
         }
 
@@ -182,35 +210,7 @@ export function Intro({ onPickRole, onLogin }) {
         .tag-card.is-selected .tag-icon-badge {
           background: rgba(122, 31, 43, 0.14);
         }
-        .continue-bar {
-          display: flex;
-          justify-content: center;
-          margin-top: 40px;
-        }
-        .continue-btn {
-          width: 100%;
-          max-width: 340px;
-          padding: 14px 24px;
-          border-radius: 10px;
-          border: none;
-          font-weight: 600;
-          font-size: 15px;
-          background: var(--maroon, #7A1F2B);
-          color: #fff;
-          cursor: pointer;
-          transition: all 0.2s ease-in-out;
-          box-shadow: 0 6px 16px rgba(122, 31, 43, 0.25);
-        }
-        .continue-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 10px 22px rgba(122, 31, 43, 0.3);
-        }
-        .continue-btn:disabled {
-          background: #d8d8d8;
-          color: #9a9a9a;
-          cursor: not-allowed;
-          box-shadow: none;
-        }
+        /* Continue button removed — keep layout intact */
 
         /* --- About BeefTrace: 3-column overview grid --- */
         .about-headline {
@@ -290,16 +290,25 @@ export function Intro({ onPickRole, onLogin }) {
         }
       `}</style>
 
-      {/* Persistent top-right nav — same btn/btn-primary/btn-outline classes as
-          the About section's CTAs, so it's styled identically. Fixed so it's
-          reachable the instant the page loads, without waiting to scroll past
-          the hero. The About section's own Get Started / Login buttons are
-          left exactly as they were. */}
+      {/* Intro-only header: About and Help sit on the left, while the core
+          actions remain on the right. This stays limited to the landing page and
+          does not affect the dashboard topbars. */}
       <header className="site-header">
-        <button className="btn btn-primary" onClick={() => scrollToId('enroll-section')}>
-          Get Started
-        </button>
-        <button className="btn btn-outline" onClick={onLogin}>Login</button>
+        <div className="site-header-right">
+          <button className="btn btn-ghost site-header-link" onClick={() => scrollToId('about')}>
+            About
+          </button>
+          <button className="btn btn-primary" onClick={() => scrollToId('enroll-section')}>
+            Get Started
+          </button>
+          <button className="btn btn-outline site-header-link" onClick={onLogin}>Login</button>
+          <button className="btn btn-ghost site-header-link" onClick={() => scrollToId('help')}>
+            Help
+          </button>
+          <button className="btn btn-ghost site-header-link" onClick={() => scrollToId('contact')}>
+            Contact
+          </button>
+        </div>
       </header>
 
       <section className="hero">
@@ -347,12 +356,20 @@ export function Intro({ onPickRole, onLogin }) {
             ))}
           </div>
 
-          <div className="about-cta">
-            <button className="btn btn-primary" onClick={() => scrollToId('enroll-section')}>
-              Get Started
-            </button>
-            <button className="btn btn-outline" onClick={onLogin}>Login </button>
-          </div>
+          {/* Removed 'Get Started' and 'Login' buttons from About section */}
+        </div>
+      </section>
+
+      <section className="help-panel" id="help">
+        <div className="hero-inner">
+          <p className="eyebrow" style={{ color: 'var(--maroon-800)' }}>Help</p>
+          <h2 style={{ fontSize: 26, fontWeight: 600, margin: '8px 0 10px' }}>
+            Need a hand getting started?
+          </h2>
+          <p style={{ maxWidth: 720, color: 'var(--ink-600)', lineHeight: 1.7, margin: 0 }}>
+            Choose your role in the supply chain, sign in to your dashboard, and manage traceability records from farm to retail.
+            If you need guidance, start with the role selection below and follow the onboarding prompts for your workflow.
+          </p>
         </div>
       </section>
 
@@ -395,7 +412,10 @@ export function Intro({ onPickRole, onLogin }) {
                 style={{ textAlign: 'left' }}
                 key={r.name}
                 aria-pressed={isSelected}
-                onClick={() => setSelectedRole(r)}
+                onClick={() => {
+                  setSelectedRole(r)
+                  onPickRole && onPickRole(r)
+                }}
               >
                 <div className="tag-icon-badge">
                   <Icon className="tag-icon" size={26}>{r.icon}</Icon>
@@ -407,15 +427,7 @@ export function Intro({ onPickRole, onLogin }) {
           })}
         </div>
 
-        <div className="continue-bar">
-          <button
-            className="continue-btn"
-            disabled={!selectedRole}
-            onClick={() => selectedRole && onPickRole(selectedRole)}
-          >
-            Continue
-          </button>
-        </div>
+        {/* Continue button removed per request */}
       </section>
 
       <Footer onEnroll={() => scrollToId('enroll-section')} onLogin={onLogin} />

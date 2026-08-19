@@ -64,7 +64,7 @@ export function AdminAuthProvider({ children }) {
     if (!result?.token || !result?.user) {
       throw new Error("Unexpected response from the server.");
     }
-    if (result.user.role !== "admin" && result.user.role !== "super_admin") {
+    if (result.user.role !== "administrator" && result.user.role !== "super_admin") {
       throw new Error("This account does not have admin access.");
     }
     setAdmin(result.user);
@@ -76,13 +76,22 @@ export function AdminAuthProvider({ children }) {
     clearSession();
   }
 
+  // Re-reads the Supabase Auth user (e.g. after a profile edit) so the shell
+  // reflects the change without requiring a full re-login.
+  const refreshAdmin = useCallback(async () => {
+    const fresh = await getStoredAdminUser();
+    if (fresh) setAdmin(fresh);
+    return fresh;
+  }, []);
+
   const value = {
     admin,
     isAuthenticated: !!admin,
-    isAdmin: admin?.role === "admin" || admin?.role === "super_admin",
+    isAdmin: admin?.role === "administrator" || admin?.role === "super_admin",
     checkingSession,
     login,
     logout,
+    refreshAdmin,
   };
 
   return (

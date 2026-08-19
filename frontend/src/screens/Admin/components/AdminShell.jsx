@@ -1,17 +1,22 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { DashboardShell } from "../../../components/DashboardShell";
 import { IconPaths } from "../../../components/icons";
 import { useAdminAuth } from "../context/useAdminAuth";
 
 export function AdminShell({ onToggleTheme, children }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { admin, logout } = useAdminAuth();
 
   const navItems = [
     { label: "Dashboard", icon: IconPaths.grid, path: "/admin" },
     { label: "Users", icon: IconPaths.profile, path: "/admin/users" },
-    { label: "Organizations", icon: IconPaths.warehouse, path: "/admin/organizations" },
-    { label: "Slaughterhouses", icon: IconPaths.abattoir, path: "/admin/slaughterhouses" },
+    {
+      label: "Organizations",
+      icon: IconPaths.warehouse,
+      path: "/admin/organizations",
+      active: location.pathname.startsWith("/admin/organizations"),
+    },
     { label: "Traceability", icon: IconPaths.search, path: "/admin/traceability" },
     { label: "Approvals", icon: IconPaths.check, path: "/admin/approvals" },
     { label: "Reports", icon: IconPaths.sales, path: "/admin/reports" },
