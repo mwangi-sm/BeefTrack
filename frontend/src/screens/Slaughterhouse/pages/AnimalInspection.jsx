@@ -53,7 +53,7 @@ export function AnimalInspection() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, []);
 
-  const selected = records.find((r) => r.tagId === selectedId) || null;
+  const selected = records.find((r) => r.id === selectedId) || null;
   const updateDraft = (field) => (e) => setDraft((d) => ({ ...d, [field]: e.target.value }));
 
   async function handleCreate(e) {
@@ -76,10 +76,10 @@ export function AnimalInspection() {
   async function handleDecide(record, outcome) {
     setSaving(true);
     try {
-      await recordInspection(record.tagId, { outcome });
+      await recordInspection(record.id, outcome);
       setRecords((prev) =>
         prev.map((r) =>
-          r.tagId === record.tagId ? { ...r, outcome } : r
+          r.id === record.id ? { ...r, outcome } : r
         )
       );
       setSelectedId(null);
@@ -186,13 +186,13 @@ export function AnimalInspection() {
           const meta = STATUS_MAP[r.outcome || "pending"] || STATUS_MAP.pending;
           return (
             <CareRow
-              key={r.tagId}
-              id={r.tagId}
+              key={r.id}
+              id={r.animalId}
               type={r.vet ? `Vet: ${r.vet}` : "No veterinarian assigned"}
               due={r.batch ? `Batch ${r.batch}` : "No batch recorded"}
               status={meta.status}
               label={meta.label}
-              onClick={() => setSelectedId(r.tagId)}
+              onClick={() => setSelectedId(r.id)}
             />
           );
         })}

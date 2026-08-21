@@ -18,7 +18,7 @@ const NEXT_LABEL = {
   in_transit: "Mark delivered",
 };
 
-const BLANK_DRAFT = { id: "", destination: "", processor: "", driver: "", vehicle: "", departure: "" };
+const BLANK_DRAFT = { id: "", carcassId: "", destination: "", processor: "", driver: "", vehicle: "", departure: "" };
 
 export function Shipments() {
   const [shipments, setShipments] = useState([]);
@@ -61,8 +61,8 @@ export function Shipments() {
   async function advance(shipment) {
     setSaving(true);
     try {
-      await advanceShipment(shipment.id);
       const next = shipment.status === "scheduled" ? "in_transit" : "delivered";
+      await advanceShipment(shipment.id, next);
       setShipments((prev) => prev.map((s) => (s.id === shipment.id ? { ...s, status: next } : s)));
       setSelectedId(null);
     } finally {
@@ -103,6 +103,7 @@ export function Shipments() {
           <form onSubmit={handleCreate} style={{ marginBottom: 18, paddingBottom: 18, borderBottom: "1px solid var(--border-soft)" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
               <FormField label="Shipment ID" value={draft.id} onChange={updateDraft("id")} placeholder="e.g. SH-000198" required />
+              <FormField label="Approved carcass ID" value={draft.carcassId} onChange={updateDraft("carcassId")} placeholder="e.g. CC-000551" required />
               <FormField label="Destination" value={draft.destination} onChange={updateDraft("destination")} placeholder="e.g. Uptown Butchers, Nairobi CBD" required />
               <FormField label="Processor / distributor" value={draft.processor} onChange={updateDraft("processor")} placeholder="Company name" />
               <FormField label="Driver" value={draft.driver} onChange={updateDraft("driver")} placeholder="Driver name" />
@@ -110,7 +111,7 @@ export function Shipments() {
               <FormField label="Departure" type="datetime-local" value={draft.departure} onChange={updateDraft("departure")} />
             </div>
             <div style={{ display: "flex", gap: 10 }}>
-              <button className="btn btn-primary" type="submit" disabled={creating || !draft.id || !draft.destination}>
+              <button className="btn btn-primary" type="submit" disabled={creating || !draft.id || !draft.carcassId || !draft.destination}>
                 <Icon size={15} style={{ marginRight: 2 }}>{IconPaths.save}</Icon>
                 {creating ? "Saving…" : "Save shipment"}
               </button>

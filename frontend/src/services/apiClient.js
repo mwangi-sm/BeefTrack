@@ -43,8 +43,8 @@ export async function apiRequest(path, options = {}) {
     headers.set("Authorization", `Bearer ${session.access_token}`);
     if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
     if (import.meta.env.DEV) {
-      // Intentionally do not log the credential itself.
-      console.debug(`[BeefTrace API] Bearer token attached: ${path}`);
+      // Intentionally do not log the credential itself. Log presence only.
+      console.debug(`[BeefTrace API] send: path=${path} access_token_present=${Boolean(session?.access_token)} headers=[${Array.from(headers.keys()).join(',')}]`);
     }
     return fetch(`${API_BASE_URL}${path}`, { ...options, headers });
   }

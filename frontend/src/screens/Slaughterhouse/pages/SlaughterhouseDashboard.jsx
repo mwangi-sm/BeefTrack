@@ -23,10 +23,8 @@ import { CarcassManagement } from "./CarcassManagement";
 import { CarcassInspection } from "./CarcassInspection";
 import { Shipments } from "./Shipments";
 import { Traceability } from "./Traceability";
-import { Reports } from "./Reports";
 import { Notifications } from "./Notifications";
 import { Profile } from "./Profile";
-import { SetupAccount } from "./SetupAccount";
 
 const chartTooltipStyle = {
   background: "var(--page-bg)",
@@ -85,7 +83,7 @@ function SlaughterhouseHome({ fullname }) {
         }
       />
 
-      {window.localStorage.getItem("beef_trace_slaughterhouse_setup_done") !== "true" && (
+      {false && (
         <div style={{
           display: "flex",
           alignItems: "center",
@@ -237,7 +235,6 @@ export function SlaughterhouseDashboard({ fullname, onLogout, onToggleTheme }) {
     <SlaughterhouseShell fullname={fullname} onLogout={onLogout} onToggleTheme={onToggleTheme}>
       <Routes>
         <Route index element={<SlaughterhouseHome fullname={fullname} />} />
-        <Route path="setup" element={<SetupAccount />} />
         <Route path="reception" element={<AnimalReception />} />
         <Route path="inspection" element={<AnimalInspection />} />
         <Route path="slaughter" element={<SlaughterOperations />} />
@@ -245,19 +242,8 @@ export function SlaughterhouseDashboard({ fullname, onLogout, onToggleTheme }) {
         <Route path="carcass-inspection" element={<CarcassInspection />} />
         <Route path="shipments" element={<Shipments />} />
         <Route path="traceability" element={<Traceability />} />
-        <Route path="reports" element={<Reports />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="profile" element={<Profile />} />
-        <Route
-          path="settings"
-          element={
-            <Panel title="Settings">
-              <p style={{ fontSize: 13.5, color: "var(--ink-600)", margin: 0 }}>
-                Account and facility settings will live here.
-              </p>
-            </Panel>
-          }
-        />
       </Routes>
     </SlaughterhouseShell>
   );

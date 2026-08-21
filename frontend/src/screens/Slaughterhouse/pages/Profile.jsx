@@ -4,8 +4,7 @@ import { DashHead } from "../../../components/DashHead";
 import { Panel, DetailRow, EmptyState, LoadingState } from "../../../components/DashboardBits";
 import { Icon, IconPaths } from "../../../components/icons";
 import { FormField } from "../components/Formfield";
-import { getCurrentMockUser } from "../../../lib/mockAuth";
-import { updateProfile, fetchUserActivityStats } from "../services/slaughterhouseApi";
+import { updateProfile, fetchProfile, fetchUserActivityStats } from "../services/slaughterhouseApi";
 import { getDocuments, uploadDocument, deleteDocument } from "../services/slaughterhouseApi";
 import { useAsync } from "../../Transporter/services/useTransporter";
 
@@ -388,18 +387,24 @@ function DocumentsSection() {
 }
 
 export function Profile() {
-  const user = getCurrentMockUser();
-
   const [form, setForm] = useState({
-    fullname: user?.fullname || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
+    fullname: "",
+    email: "",
+    phone: "",
   });
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
 
   const [activity, setActivity] = useState(null);
   const [activityStatus, setActivityStatus] = useState("loading");
+
+  useEffect(() => {
+    let active = true;
+    fetchProfile().then((profile) => {
+      if (active) setForm({ fullname: profile.fullName || "", email: profile.email || "", phone: profile.phone || "" });
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -439,7 +444,7 @@ export function Profile() {
 
   return (
     <>
-      <DashHead title="Profile & Settings" subtitle="Your account details, activity, documents and facility access." />
+      <DashHead title="Profile" subtitle="Your authenticated account details." />
 
       <Panel title="Profile">
         <form onSubmit={handleProfileSubmit}>
@@ -457,8 +462,6 @@ export function Profile() {
           </div>
         </form>
 
-        <DetailRow label="Role" value="Floor Supervisor" />
-        <DetailRow label="Facility ID" value="SH-000012" />
       </Panel>
 
       <Panel title="Your activity this week">

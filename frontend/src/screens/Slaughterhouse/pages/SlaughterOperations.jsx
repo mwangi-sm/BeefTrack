@@ -8,7 +8,7 @@ import {
   recordSlaughter,
   recordManualSlaughter,
 } from "../services/slaughterhouseApi";
-import { getCurrentMockUser } from "../../../lib/mockAuth";
+import { useSupabaseSession } from "../../../context/useSupabaseSession";
 
 // ─── helpers ──────────────────────────────────────────────────────────────
 
@@ -60,6 +60,7 @@ const SEX_OPTIONS = ["Male", "Female", "Unknown"];
 // ─── component ────────────────────────────────────────────────────────────
 
 export function SlaughterOperations() {
+  const { user } = useSupabaseSession();
   // mode: "lookup" | "manual"
   const [mode, setMode] = useState("lookup");
 
@@ -93,11 +94,7 @@ export function SlaughterOperations() {
   const [done, setDone] = useState(false);
   const [doneLabel, setDoneLabel] = useState("");
 
-  // current user info (read synchronously from sessionStorage)
-  const [officerName] = useState(() => {
-    const user = getCurrentMockUser();
-    return user?.fullname || "Officer";
-  });
+  const officerName = user?.fullName || user?.email || "";
 
   // ── look up the animal ──────────────────────────────────────────────────
 
@@ -160,7 +157,8 @@ export function SlaughterOperations() {
   // ── show manual entry inline ────────────────────────────────────────────
 
   function openManual() {
-    setMode("manual");
+    setLookupError("Manual slaughter is unavailable: every slaughter record must be linked to a received and approved animal.");
+    setLookupStatus("error");
   }
 
   // ── record slaughter ────────────────────────────────────────────────────

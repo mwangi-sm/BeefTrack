@@ -3,6 +3,7 @@ import { apiRequest, ApiError } from "../../../services/apiClient";
 const base = "/slaughterhouse";
 const get = (path) => apiRequest(`${base}${path}`);
 const post = (path, body) => apiRequest(`${base}${path}`, { method: "POST", body: JSON.stringify(body) });
+const patch = (path) => apiRequest(`${base}${path}`, { method: "PATCH" });
 const unavailable = (feature) => Promise.reject(new ApiError(501, `${feature} is not available because no verified backend contract exists.`));
 const camel = (value) => Array.isArray(value) ? value.map(camel) : !value || typeof value !== "object" ? value : Object.fromEntries(Object.entries(value).map(([key, item]) => [key.replace(/_([a-z])/g, (_, c) => c.toUpperCase()), camel(item)]));
 const items = (value) => (Array.isArray(value?.items || value) ? (value?.items || value).map(camel) : []);
@@ -10,19 +11,19 @@ const items = (value) => (Array.isArray(value?.items || value) ? (value?.items |
 export const lookupAnimalByTag = (tagId) => get("/reception").then(items).then((rows) => rows.find((row) => row.tagId === tagId) || null);
 export const fetchReceptionQueue = () => get("/reception").then(items);
 export const createAnimal = (p) => post("/reception", { tag_id: p.tagId, farmer: p.farmer || "", transporter: p.transporter, vehicle_number: p.vehicleNumber, arrival_date: p.arrivalDate, arrival_time: p.arrivalTime, breed: p.breed || "", weight: p.weight, batch: p.batch || "", status: p.status || "pending" }).then(camel);
-export const acceptAnimal = () => unavailable("Reception decision");
-export const rejectAnimal = () => unavailable("Reception decision");
+export const acceptAnimal = (tagId) => apiRequest(`${base}/reception/${encodeURIComponent(tagId)}/status`, { method: "PATCH", body: JSON.stringify({ status: "accepted" }) });
+export const rejectAnimal = (tagId) => apiRequest(`${base}/reception/${encodeURIComponent(tagId)}/status`, { method: "PATCH", body: JSON.stringify({ status: "rejected" }) });
 export const deleteAnimal = () => unavailable("Reception deletion");
 
 export const fetchInspectionQueue = () => get("/inspection").then(items);
 export const createInspection = (p) => post("/inspection", { animal_id: p.tagId, vet: p.vet, batch: p.batch || "", health_check: p.healthCheck || "", body_condition: p.bodyCondition || "", signs_of_disease: p.signsOfDisease || "", temperature: p.temperature, notes: p.notes || "", outcome: "pending" }).then(camel);
-export const recordInspection = () => unavailable("Inspection decision");
+export const recordInspection = (id, outcome) => apiRequest(`${base}/inspection/${encodeURIComponent(id)}/outcome`, { method: "PATCH", body: JSON.stringify({ outcome }) });
 export const deleteInspection = () => unavailable("Inspection deletion");
 export const checkAnimalApproved = (tagId) => fetchInspectionQueue().then((rows) => { const inspection = rows.find((row) => row.animalId === tagId) || null; return { approved: inspection?.outcome === "approved", inspection }; });
 
 export const fetchSlaughterQueue = () => get("/slaughter").then(items);
 export const createSlaughterRecord = (p) => post("/slaughter", { animal_id: p.tagId }).then(camel);
-export const advanceSlaughterStage = () => unavailable("Slaughter stage update");
+export const advanceSlaughterStage = (id, stage) => apiRequest(`${base}/slaughter/${encodeURIComponent(id)}/stage`, { method: "PATCH", body: JSON.stringify({ stage }) });
 export const lookupAnimalForSlaughter = async (tagId) => { const animal = await lookupAnimalByTag(tagId); const { approved, inspection } = await checkAnimalApproved(tagId); return { animal, inspection, canSlaughter: Boolean(animal && approved), reason: animal && approved ? null : "The animal must be received and approved by ante-mortem inspection." }; };
 export const recordSlaughter = (p) => post("/slaughter", { animal_id: p.animalId, batch: p.batch || "", stage: "completed", staff: p.officer || "", method: p.otherMethod || p.method || "", facility: p.facility || "", remarks: p.remarks || "", started_at: `${p.slaughterDate}T${p.slaughterTime || "00:00"}:00Z`, completed_at: `${p.slaughterDate}T${p.slaughterTime || "00:00"}:00Z` }).then(camel);
 export const recordManualSlaughter = () => unavailable("Manual slaughter");
@@ -36,11 +37,12 @@ export const recordCarcassInspection = () => unavailable("Carcass inspection upd
 export const deleteCarcassInspection = () => unavailable("Carcass inspection deletion");
 export const fetchShipments = () => get("/shipments").then(items);
 export const createShipment = (p) => post("/shipments", { id: p.id, carcass_id: p.carcassId, destination: p.destination, processor: p.processor || "", driver: p.driver || "", vehicle: p.vehicle || "", departure: p.departure || "", status: p.status || "pending" }).then(camel);
-export const advanceShipment = () => unavailable("Shipment status update");
+export const advanceShipment = (id, status) => apiRequest(`${base}/shipments/${encodeURIComponent(id)}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
 export const deleteShipment = () => unavailable("Shipment deletion");
 export const traceRecord = (query) => get(`/traceability?tag=${encodeURIComponent(query)}`).then(camel);
 export const fetchNotifications = () => get("/notifications").then(items);
-export const markNotificationRead = () => unavailable("Notification update");
+export const markNotificationRead = (id) => patch(`/notifications/${encodeURIComponent(id)}/read`);
+export const fetchProfile = () => get("/profile").then(camel);
 export const updateProfile = (p) => {
   const unsupported = Object.keys(p).filter((key) => !["fullName", "fullname", "email", "phone"].includes(key));
   if (unsupported.length) return unavailable("Facility setup");

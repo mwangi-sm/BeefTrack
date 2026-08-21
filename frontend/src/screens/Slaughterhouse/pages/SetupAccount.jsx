@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Icon, IconPaths } from '../../../components/icons'
 import { Panel } from '../../../components/DashboardBits'
 import { DashHead } from '../../../components/DashHead'
-import { getCurrentMockUser } from '../../../lib/mockAuth'
+import { useSupabaseSession } from '../../../context/useSupabaseSession'
 import { updateProfile } from '../services/slaughterhouseApi'
 
 const checkIcon = (
@@ -52,8 +52,8 @@ const STEPS = [
 
 export function SetupAccount() {
   const navigate = useNavigate()
-  const user = getCurrentMockUser()
-  const fullname = user?.fullname || ''
+  const { user } = useSupabaseSession()
+  const fullname = user?.fullName || ''
 
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -113,7 +113,6 @@ export function SetupAccount() {
         supervisorName,
         staffCount,
       })
-      window.localStorage.setItem('beef_trace_slaughterhouse_setup_done', 'true')
       navigate('/dashboard/slaughterhouse', { replace: true })
     } catch (error) {
       setSaveError(error.message || 'Unable to save facility setup.')

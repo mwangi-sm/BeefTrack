@@ -65,12 +65,13 @@ export function Traceability() {
       )}
       {status === "ready" && result && (
         <Panel title={`Chain of custody — ${result.animal?.tagId || query}`}>
-          <DetailRow label="Farmer" value={result.animal?.farmer} />
-          <DetailRow label="Arrival" value={result.animal?.arrival} />
-          <DetailRow label="Inspection" value={result.inspection?.outcome} />
-          <DetailRow label="Slaughter stage" value={result.slaughter?.stage} />
-          <DetailRow label="Carcass" value={result.carcass?.id} />
-          <DetailRow label="Destination" value={result.shipment?.destination} />
+          <DetailRow label="Farmer" value={result.reception?.farmer} />
+          <DetailRow label="Reception status" value={result.reception?.status} />
+          <DetailRow label="Ante-mortem outcome" value={result.anteMortemInspections?.[0]?.outcome} />
+          <DetailRow label="Slaughter stage" value={result.slaughterOperations?.[0]?.stage} />
+          <DetailRow label="Carcass" value={result.carcasses?.[0]?.id} />
+          <DetailRow label="Carcass inspection" value={result.carcassInspections?.[0]?.outcome} />
+          <DetailRow label="Destination" value={result.shipments?.[0]?.destination} />
         </Panel>
       )}
     </>
