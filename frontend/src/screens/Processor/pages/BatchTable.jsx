@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { Panel } from '../../../components/DashboardBits'
 import { useProcessorData } from '../context/useProcessorData'
 
@@ -7,14 +8,22 @@ const STAGE_LABELS = {
   ready: { label: 'Ready', action: 'Dispatch' },
 }
 
+// Must match ProcessorDashboard.jsx's PACKAGING_QUEUE_ANCHOR — used as a
+// fallback if this component is ever rendered without onContinuePackaging.
+const PACKAGING_QUEUE_ANCHOR = 'packaging-queue-panel'
+
 /**
  * Active Production Batches table. Each row's action button advances the
  * batch through its lifecycle: packaging -> needs-qr -> ready -> dispatch.
- * "Dispatch" is a hand-off point to the Distributor side, so it doesn't
- * change local state here — it's a TODO for once that flow is wired up.
+ * "Continue" on a packaging-stage batch calls onContinuePackaging (wired by
+ * ProcessorHome) to open Package products pre-filled with that batch and
+ * scroll to the Packaging Queue panel. "Dispatch" is a hand-off point to
+ * the Distributor side, so it doesn't change local state — TODO for once
+ * that flow is wired up. "View all" navigates to the full batches page.
  */
-export function BatchTable() {
+export function BatchTable({ onContinuePackaging }) {
   const { batches, generateQR } = useProcessorData()
+  const navigate = useNavigate()
 
   const handleAction = (batch) => {
     if (batch.stage === 'needs-qr') {
@@ -27,12 +36,28 @@ export function BatchTable() {
       // Distributor's Dispatch button pre-fills ScheduleDelivery)
       return
     }
-    // 'packaging' stage's "Continue" action opens the packaging queue view;
-    // no state change needed here since PackagingQueue.jsx owns progress.
+    if (batch.stage === 'processing') {
+      if (onContinuePackaging) {
+        onContinuePackaging(batch)
+      } else {
+        navigate(`/dashboard/processor#${PACKAGING_QUEUE_ANCHOR}`)
+      }
+    }
   }
 
   return (
-    <Panel title="Active production batches" action={<a href="#" className="link">View all</a>}>
+    <Panel
+      title="Active production batches"
+      action={
+        <a
+          href="#"
+          className="link"
+          onClick={(e) => { e.preventDefault(); navigate('/dashboard/processor/batches') }}
+        >
+          View all
+        </a>
+      }
+    >
       {batches.length === 0 ? (
         <p className="empty-state">No batches created yet.</p>
       ) : (

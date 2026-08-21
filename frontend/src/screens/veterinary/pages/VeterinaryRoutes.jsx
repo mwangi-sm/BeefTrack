@@ -1,11 +1,11 @@
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { VeterinaryDashboard } from './VeterinaryDashboard'
-import { AnimalLookup } from './AnimalLookup'
+import AnimalLookup from './AnimalLookup'
 import { VeterinaryTraceabilityHistory, VeterinaryTraceabilityLookup } from './VeterinaryTraceabilityLookup'
-import { LogVisit } from './LogVisit'
+import LogVisit from './LogVisit'
 import { InspectionHistory } from './InspectionHistory'
 
-export function VeterinaryRoutes({ flow, onLogout, onToggleTheme, traceabilityHistory, onRecordTraceabilityLookup }) {
+export function VeterinaryRoutes({ flow, fullname, onLogout, onToggleTheme, traceabilityHistory, onRecordTraceabilityLookup }) {
   const navigate = useNavigate()
   const goDashboard = () => navigate('/veterinary')
   const goLookup = () => navigate('/veterinary/lookup')
@@ -13,7 +13,7 @@ export function VeterinaryRoutes({ flow, onLogout, onToggleTheme, traceabilityHi
   const goTraceabilityHistory = () => navigate('/veterinary/traceability/history')
   const goLogVisit = () => navigate('/veterinary/log-visit')
   const goInspectionHistory = () => navigate('/veterinary/inspection-history')
-  const common = { onLogout, onToggleTheme, farms: flow.farms, animals: flow.animals }
+  const common = { fullname: `Dr. ${fullname}`, onLogout, onToggleTheme, farms: flow.farms, animals: flow.animals }
   return <Routes>
     <Route index element={<VeterinaryDashboard {...common} onRecordInspection={flow.handleRecordInspection} onOpenLookup={goLookup} onOpenTraceability={goTraceability} onOpenLogVisit={goLogVisit} onOpenInspectionHistory={goInspectionHistory} />} />
     <Route path="lookup" element={<AnimalLookup {...common} onOpenDashboard={goDashboard} />} />

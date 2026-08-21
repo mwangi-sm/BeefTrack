@@ -15,6 +15,15 @@ export const markNotificationRead = (id) => apiRequest(`/transporter/notificatio
 export const getProfile = () => apiRequest('/transporter/profile')
 export const updateProfile = (updates) => apiRequest('/transporter/profile', { method: 'PATCH', body: JSON.stringify(updates) })
 
+export const getTransportMovements = async () => items(await apiRequest('/transporter/movements'))
+export const getTransportMovement = (id) => apiRequest(`/transporter/movements/${encodeURIComponent(id)}`)
+export const acceptTransportMovement = (id) => apiRequest(`/transporter/movements/${encodeURIComponent(id)}/accept`, { method: 'POST' })
+export const startTransportMovement = (id) => apiRequest(`/transporter/movements/${encodeURIComponent(id)}/start`, { method: 'POST' })
+export const getActiveTransportMovement = () => apiRequest('/transporter/movements/active')
+export const addTransportMovementTracking = (id, data) => apiRequest(`/transporter/movements/${encodeURIComponent(id)}/tracking`, { method: 'POST', body: JSON.stringify(data) })
+export const deliverTransportMovement = (id, data) => apiRequest(`/transporter/movements/${encodeURIComponent(id)}/deliver`, { method: 'POST', body: JSON.stringify(data) })
+export const getTransportMovementHistory = async () => items(await apiRequest('/transporter/movements/history'))
+
 // transport_documents has metadata only; no verified storage/status API exists.
 export const getDocuments = async () => ({ available: false, documents: {} })
 export const uploadDocument = async () => { throw new ApiError(501, 'Document uploads are not available until storage and document-status contracts are implemented.') }

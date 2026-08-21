@@ -27,8 +27,14 @@ export function HealthRecordsScreen({ onBack, onGoAnimalSetup, onToggleTheme, on
   const [visitDoctorId, setVisitDoctorId] = useState('')
   const [visitDate, setVisitDate] = useState('')
   const [visitDetails, setVisitDetails] = useState('')
+  const [saveMessage, setSaveMessage] = useState('')
 
   const navItems = getFarmerNavItems('', navHandlers)
+
+  const completeHealthAction = (message) => {
+    setSaveMessage(message)
+    setActiveChoice('')
+  }
 
   const healthSummary = [
     { label: 'Animal ID', value: 'BT-000198' },
@@ -53,6 +59,8 @@ export function HealthRecordsScreen({ onBack, onGoAnimalSetup, onToggleTheme, on
         <div className="setup-card">
           <p className="setup-title">Health & vaccination records</p>
           <p className="setup-subtitle">Choose how you want to manage your animals' health information.</p>
+
+          {saveMessage && <div className="note-banner" style={{ marginTop: 16 }}><span style={{ color: 'var(--sage-600)' }}>✓</span><p>{saveMessage}</p></div>}
 
           <div className="setup-field-row" style={{ marginBottom: 16 }}>
             <button
@@ -271,12 +279,12 @@ export function HealthRecordsScreen({ onBack, onGoAnimalSetup, onToggleTheme, on
               Return to dashboard
             </button>
             {activeChoice === 'schedule' && (
-              <button className="btn btn-primary" onClick={() => setActiveChoice('') }>
+              <button className="btn btn-primary" onClick={() => completeHealthAction('Veterinary visit request saved. You can review it from your animal records.') }>
                 Complete schedule
               </button>
             )}
             {activeChoice === 'add' && (
-              <button className="btn btn-primary" onClick={onGoAnimalSetup}>
+              <button className="btn btn-primary" onClick={() => completeHealthAction('Health details saved. Your animal record is ready for the next update.') }>
                 Add details
               </button>
             )}

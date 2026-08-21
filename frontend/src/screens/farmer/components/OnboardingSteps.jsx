@@ -1,4 +1,5 @@
 import './OnboardingSteps.css'
+import { SplitText } from '../../../components/reactbits'
 
 // steps: [{ label, done, onClick }] — a step is only clickable if the previous
 // step is done (or it's the first step). Once a step is done it shows a tick.
@@ -18,7 +19,9 @@ export function OnboardingSteps({ steps }) {
 
   return (
     <div className="onboard-panel">
-      <p className="onboard-heading">Finish setting up your account</p>
+      <p className="onboard-heading">
+        <SplitText tag="span" text="Finish setting up your account" splitType="words" duration={0.4} delay={25} />
+      </p>
       <div className="onboard-steps">
         {steps.map((step, i) => {
           const unlocked = i === 0 || steps[i - 1].done

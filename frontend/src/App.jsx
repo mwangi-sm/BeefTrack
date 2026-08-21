@@ -5,6 +5,7 @@ import {
   Navigate,
   useNavigate,
   useParams,
+  useLocation,
 } from "react-router-dom";
 import "./App.css";
 import { getSupabase, isEmail } from "./lib/supabase";
@@ -177,7 +178,10 @@ function SignupRoute() {
 
       if (data.session) {
         if (signupRole === "veterinary_officer") {
-          navigate("/veterinary", { replace: true });
+          navigate("/veterinary", {
+            replace: true,
+            state: { fromVeterinarySignup: true },
+          });
         } else if (ROLES_WITH_SETUP.includes(signupRole)) {
           navigate(`/dashboard/${signupRole}/setup`, { replace: true });
         } else {
@@ -282,7 +286,8 @@ function DashboardRoute({ onToggleTheme, farmerFlow, agentFlow }) {
   const dashboardContent = (
     <Dashboard
       user={currentUser}
-      fullname={currentUser?.fullname || "there"}
+      fullname={currentUser?.fullname || currentUser?.email || "there"}
+      userName={currentUser?.fullname || currentUser?.email || "there"}
       onLogout={handleLogout}
       onToggleTheme={onToggleTheme}
     />
@@ -314,6 +319,7 @@ function VeterinaryRoute({
   onRecordTraceabilityLookup,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user: currentUser, checkingSession } = useSupabaseSession();
 
   if (checkingSession) {
@@ -324,7 +330,9 @@ function VeterinaryRoute({
     return <Navigate to="/login" replace />;
   }
 
-  if (currentUser.role !== "veterinary_officer") {
+  const fromVeterinarySignup = location.state?.fromVeterinarySignup === true;
+
+  if (currentUser.role !== "veterinary_officer" && !fromVeterinarySignup) {
     return <Navigate to={`/dashboard/${currentUser.role || "farmer"}`} replace />;
   }
 
@@ -339,6 +347,7 @@ function VeterinaryRoute({
 
   return (
     <VeterinaryRoutes
+      fullname={currentUser.fullname || "Veterinary officer"}
       onLogout={handleLogout}
       onToggleTheme={onToggleTheme}
       flow={farmerFlow}

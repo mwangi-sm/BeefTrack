@@ -1,0 +1,24 @@
+.rb-split-text {
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.rb-split-text__unit-wrap {
+  display: inline;
+}
+
+.rb-split-text__unit {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.rb-split-text--lines .rb-split-text__unit {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-split-text__unit {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

@@ -25,6 +25,16 @@ func TransporterRoutes(mux *http.ServeMux, verifier *utils.JWKSVerifier, db *dat
 	mux.Handle("POST /api/transporter/deliveries/{id}/accept", require(http.HandlerFunc(h.Accept)))
 	mux.Handle("POST /api/transporter/deliveries/{id}/start", require(http.HandlerFunc(h.Start)))
 	mux.Handle("POST /api/transporter/deliveries/{id}/issue", require(http.HandlerFunc(h.Issue)))
+	// Movement endpoints are the canonical transporter workflow.  Legacy
+	// delivery/trip routes remain mounted for consumers that have not migrated.
+	mux.Handle("GET /api/transporter/movements", require(http.HandlerFunc(h.Movements)))
+	mux.Handle("GET /api/transporter/movements/active", require(http.HandlerFunc(h.ActiveMovement)))
+	mux.Handle("GET /api/transporter/movements/history", require(http.HandlerFunc(h.MovementHistory)))
+	mux.Handle("GET /api/transporter/movements/{id}", require(http.HandlerFunc(h.Movement)))
+	mux.Handle("POST /api/transporter/movements/{id}/accept", require(http.HandlerFunc(h.AcceptMovement)))
+	mux.Handle("POST /api/transporter/movements/{id}/start", require(http.HandlerFunc(h.StartMovement)))
+	mux.Handle("POST /api/transporter/movements/{id}/tracking", require(http.HandlerFunc(h.AddTracking)))
+	mux.Handle("POST /api/transporter/movements/{id}/deliver", require(http.HandlerFunc(h.DeliverMovement)))
 	mux.Handle("GET /api/transporter/trip/active", require(http.HandlerFunc(h.ActiveTrip)))
 	mux.Handle("PATCH /api/transporter/trip/status", require(http.HandlerFunc(h.TripStatus)))
 	mux.Handle("GET /api/transporter/notifications", require(http.HandlerFunc(h.Notifications)))

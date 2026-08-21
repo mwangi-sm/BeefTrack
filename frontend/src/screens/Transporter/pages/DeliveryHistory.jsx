@@ -3,11 +3,11 @@ import { DashHead } from '../../../components/DashHead'
 import { Panel, CareRow, LoadingState, ErrorState, EmptyState } from '../../../components/DashboardBits'
 import { IconPaths } from '../../../components/icons'
 import { useAsync } from '../services/useTransporter'
-import { getDeliveryHistory } from '../services/transporterApi'
+import { getTransportMovementHistory } from '../services/transporterApi'
 
 export function DeliveryHistory() {
   const navigate = useNavigate()
-  const { data: history, loading, error, reload } = useAsync(getDeliveryHistory, [])
+  const { data: history, loading, error, reload } = useAsync(getTransportMovementHistory, [])
 
   return (
     <>
@@ -23,8 +23,8 @@ export function DeliveryHistory() {
           <CareRow
             key={h.id}
             id={h.id}
-            type={`Trip ${h.tripId}`}
-            due={h.assignedAt || 'Completed delivery'}
+            type={`Movement ${h.id}`}
+            due={h.deliveredAt || 'Completed delivery'}
             status="ok"
             label="Delivered"
             onClick={() => navigate(`/dashboard/transporter/deliveries/${h.id}`)}

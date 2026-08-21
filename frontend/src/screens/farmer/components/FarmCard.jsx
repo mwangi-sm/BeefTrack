@@ -1,4 +1,5 @@
 import { Icon, IconPaths } from '../../../components/icons'
+import { DecryptedText } from '../../../components/reactbits'
 import './FarmAnimalCards.css'
 
 export function FarmCard({ farm, animalCount, onViewDetails, onManage }) {
@@ -13,7 +14,9 @@ export function FarmCard({ farm, animalCount, onViewDetails, onManage }) {
           <Icon size={13}>{IconPaths.route}</Icon>
           {farm.county || 'Location not set'}
         </p>
-        <p className="farm-card-line mono">{farm.id}</p>
+        <p className="farm-card-line mono">
+          <DecryptedText text={farm.id} animateOn="view" speed={30} maxIterations={6} />
+        </p>
         <p className="farm-card-line">
           <Icon size={13}>{IconPaths.animal}</Icon>
           {animalCount} {animalCount === 1 ? 'animal' : 'animals'} registered

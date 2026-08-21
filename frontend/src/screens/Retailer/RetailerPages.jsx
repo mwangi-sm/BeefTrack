@@ -5,8 +5,10 @@ import { Panel, CareRow, InventoryRow, ActivityItem, TraceabilityLookup } from '
 // eslint-disable-next-line no-unused-vars
 import { IconPaths } from '../../components/icons'
 import { useRetailerData } from './components/RetailerDataContext'
+import { SplitText, DecryptedText } from '../../components/reactbits'
 
 export function IncomingBatchesPage() {
+  // eslint-disable-next-line no-unused-vars
   const { incomingBatches, verifyBatch, receiveBatch, loadingBatches, batchError, reloadBatches } = useRetailerData()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ id: '', packs: '', from: '', cutType: '', counter: '' })
@@ -53,12 +55,8 @@ export function IncomingBatchesPage() {
   return (
     <>
       <Panel
-        title="Receive a batch"
-        action={
-          <a className="link" onClick={() => setShowForm((value) => !value)}>
-            {showForm ? 'Cancel' : '+ Receive batch'}
-          </a>
-        }
+      title={<SplitText tag="span" text="Receive a batch" splitType="words" duration={0.4} />}
+  action={<a className="link" onClick={() => setShowForm((value) => !value)}>{showForm ? 'Cancel' : '+ Receive batch'}</a>}
       >
         {!showForm && (
           <p style={{ fontSize: 13.5, color: 'var(--ink-600)', margin: 0 }}>
@@ -80,25 +78,23 @@ export function IncomingBatchesPage() {
         )}
       </Panel>
 
-      <Panel title="Incoming batches">
-        {loadingBatches && <p style={{ fontSize: 13.5, color: 'var(--ink-600)' }}>Loading batches...</p>}
-        {batchError && <p style={{ fontSize: 13.5, color: 'var(--danger, #c0392b)' }}>{batchError} <button className="link" onClick={reloadBatches}>Retry</button></p>}
-        <p style={{ fontSize: 13, color: 'var(--ink-600)', margin: '0 0 12px' }}>
-          Click a pending batch to verify it. Verified batches are added to the shelf inventory automatically.
-        </p>
-        {incomingBatches.length === 0 && <p style={{ fontSize: 13.5, color: 'var(--ink-600)' }}>No incoming batches right now.</p>}
-        {incomingBatches.map((batch) => (
-          <CareRow
-            key={batch.id}
-            id={batch.id}
-            type={`${batch.packs} packs · ${batch.cutType || 'Beef cuts'} · From ${batch.from}`}
-            due={batch.status === 'verified' ? 'Verified and shelved' : 'Awaiting verification'}
-            status={batch.status === 'verified' ? 'ok' : 'soon'}
-            label={batch.status === 'verified' ? 'Verified' : 'Needs check'}
-            onClick={batch.status === 'verified' ? undefined : () => verifyBatch(batch.id)}
-          />
-        ))}
-      </Panel>
+    <Panel title={<SplitText tag="span" text="Incoming batches" splitType="words" duration={0.4} />}>
+  <p style={{ fontSize: 13, color: 'var(--ink-600)', margin: '0 0 12px' }}>
+    Click a pending batch to verify it. Verified batches are added to the shelf inventory automatically.
+  </p>
+  {incomingBatches.length === 0 && <p style={{ fontSize: 13.5, color: 'var(--ink-600)' }}>No incoming batches right now.</p>}
+  {incomingBatches.map((batch) => (
+    <CareRow
+      key={batch.id}
+      id={<DecryptedText text={batch.id} animateOn="view" speed={30} maxIterations={6} />}
+      type={`${batch.packs} packs · ${batch.cutType || 'Beef cuts'} · From ${batch.from}`}
+      due={batch.status === 'verified' ? 'Verified and shelved' : 'Awaiting verification'}
+      status={batch.status === 'verified' ? 'ok' : 'soon'}
+      label={batch.status === 'verified' ? 'Verified' : 'Needs check'}
+      onClick={batch.status === 'verified' ? undefined : () => verifyBatch(batch.id)}
+    />
+  ))}
+</Panel> 
     </>
   )
 }
@@ -144,7 +140,7 @@ export function InventoryPage() {
   const [qtyById, setQtyById] = useState({})
 
   return (
-    <Panel title="Shelf inventory">
+    <Panel title={<SplitText tag="span" text="Shelf inventory" splitType="words" duration={0.4} />}>
       {inventory.length === 0 && <p style={{ fontSize: 13.5, color: 'var(--ink-600)' }}>Nothing on the shelf yet.</p>}
       {inventory.length > 0 && (
         <div style={{ overflowX: 'auto' }}>
@@ -249,43 +245,63 @@ export function VerifyProductPage() {
 
   return (
     <>
-      <Panel title="Verify with QR / RFID">
-        <p style={{ fontSize: 13, color: 'var(--ink-600)', margin: '0 0 12px' }}>
-          Scan a batch QR code or enter the lot ID manually to verify it against the shared retailer record.
-        </p>
-        <button className="btn btn-primary" style={{ marginBottom: 12 }} onClick={() => setScannerOpen((value) => !value)}>
-          {scannerOpen ? 'Close scanner' : 'Open QR / RFID scanner'}
-        </button>
-        {scannerOpen && <QrScannerPanel onScan={handleScanSuccess} onCancel={() => setScannerOpen(false)} />}
-        <TraceabilityLookup
-          placeholder="e.g. LOT-000084"
-          helper="Enter a batch/lot ID to verify it manually."
-          buttonLabel="Verify batch"
-          value={lookupId}
-          onChange={(value) => {
-            setLookupId(value)
-            setLookupResult(null)
-          }}
-          onSubmit={() => handleVerifySubmit()}
+    <Panel title={<SplitText tag="span" text="Verify with QR / RFID" splitType="words" duration={0.45} />}>
+  <p style={{ fontSize: 13, color: 'var(--ink-600)', margin: '0 0 12px' }}>
+    Scan a batch QR code or enter the lot ID manually to verify it against the shared retailer record.
+  </p>
+  <button className="btn btn-primary" style={{ marginBottom: 12 }} onClick={() => setScannerOpen((value) => !value)}>
+    {scannerOpen ? 'Close scanner' : 'Open QR / RFID scanner'}
+  </button>
+  {scannerOpen && <QrScannerPanel onScan={handleScanSuccess} onCancel={() => setScannerOpen(false)} />}
+  <TraceabilityLookup
+    placeholder="e.g. LOT-000084"
+    helper="Enter a batch/lot ID to verify it manually."
+    buttonLabel="Verify batch"
+    value={lookupId}
+    onChange={(value) => { setLookupId(value); setLookupResult(null) }}
+    onSubmit={() => handleVerifySubmit()}
+  />
+  {lookupResult?.status === 'verified' && (
+    <div
+      style={{
+        marginTop: 14,
+        padding: '16px 18px',
+        borderRadius: 12,
+        border: '1.5px solid var(--sage-600, #5c7a5c)',
+        background: 'rgba(92,122,92,0.08)',
+      }}
+    >
+      <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--sage-600, #1a7f37)', letterSpacing: 0.4 }}>
+        <DecryptedText
+          text="VERIFIED · ORIGIN CONFIRMED"
+          animateOn="view"
+          speed={25}
+          maxIterations={9}
+          revealDirection="center"
         />
-        {lookupResult?.status === 'verified' && <p style={{ fontSize: 13, color: 'var(--success, #1a7f37)', marginTop: 10 }}>{lookupResult.id} verified successfully.</p>}
-        {lookupResult?.status === 'already-verified' && <p style={{ fontSize: 13, color: 'var(--ink-600)', marginTop: 10 }}>{lookupResult.id} was already verified.</p>}
-        {lookupResult?.status === 'not-found' && <p style={{ fontSize: 13, color: 'var(--danger, #c0392b)', marginTop: 10 }}>No incoming batch found with ID "{lookupResult.id}".</p>}
-      </Panel>
-      <Panel title="Pending verification">
-        {pending.length === 0 && <p style={{ fontSize: 13.5, color: 'var(--ink-600)' }}>Nothing pending — all caught up.</p>}
-        {pending.map((batch) => (
-          <CareRow
-            key={batch.id}
-            id={batch.id}
-            type={`${batch.packs} packs · ${batch.cutType || 'Beef cuts'} · From ${batch.from}`}
-            due="Awaiting verification"
-            status="soon"
-            label="Verify now"
-            onClick={() => handleVerifySubmit(batch.id)}
-          />
-        ))}
-      </Panel>
+      </p>
+      <p style={{ margin: '10px 0 0', fontSize: 13, color: 'var(--ink-600)' }}>
+        <DecryptedText text={lookupResult.id} animateOn="view" speed={30} maxIterations={7} />
+      </p>
+    </div>
+  )}
+  {lookupResult?.status === 'already-verified' && <p style={{ fontSize: 13, color: 'var(--ink-600)', marginTop: 10 }}><DecryptedText text={lookupResult.id} animateOn="view" speed={30} maxIterations={6} /> was already verified.</p>}
+  {lookupResult?.status === 'not-found' && <p style={{ fontSize: 13, color: 'var(--danger, #c0392b)', marginTop: 10 }}>No incoming batch found with ID "{lookupResult.id}".</p>}
+</Panel>
+<Panel title={<SplitText tag="span" text="Pending verification" splitType="words" duration={0.4} />}>
+  {pending.length === 0 && <p style={{ fontSize: 13.5, color: 'var(--ink-600)' }}>Nothing pending — all caught up.</p>}
+  {pending.map((batch) => (
+    <CareRow
+      key={batch.id}
+      id={<DecryptedText text={batch.id} animateOn="view" speed={30} maxIterations={6} />}
+      type={`${batch.packs} packs · ${batch.cutType || 'Beef cuts'} · From ${batch.from}`}
+      due="Awaiting verification"
+      status="soon"
+      label="Verify now"
+      onClick={() => handleVerifySubmit(batch.id)}
+    />
+  ))}
+</Panel>  
     </>
   )
 }
@@ -294,7 +310,7 @@ export function SalesPage() {
   const { sales, stats } = useRetailerData()
 
   return (
-    <Panel title={`Sales — ${stats.unitsSoldToday} units sold today`}>
+    <Panel title={<SplitText tag="span" text={`Sales — ${stats.unitsSoldToday} units sold today`} splitType="words" duration={0.4} />}>
       {sales.length === 0 && <p style={{ fontSize: 13.5, color: 'var(--ink-600)' }}>No sales recorded yet.</p>}
       {sales.map((sale) => (
         <div key={sale.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border-soft)', fontSize: 13.5 }}>
@@ -314,14 +330,14 @@ export function NotificationsPage() {
 
   return (
     <>
-      <Panel title="Customer scans">
+      <Panel title={<SplitText tag="span" text="Customer scans" splitType="words" duration={0.4} />}>
         {customerScans.length === 0 && <p style={{ fontSize: 13.5, color: 'var(--ink-600)' }}>No customer scans yet.</p>}
         {customerScans.map((note) => (
           <ActivityItem key={note.id} text={note.text} time={note.time} />
         ))}
       </Panel>
 
-      <Panel title="Retailer verified batches">
+      <Panel title={<SplitText tag="span" text="Retailer verified batches" splitType="words" duration={0.4} />}>
         {verifiedBatches.length === 0 && <p style={{ fontSize: 13.5, color: 'var(--ink-600)' }}>No verified-batch updates yet.</p>}
         {verifiedBatches.map((note) => (
           <ActivityItem key={note.id} text={note.text} time={note.time} />

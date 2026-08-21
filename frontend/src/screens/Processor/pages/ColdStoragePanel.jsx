@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { Panel } from '../../../components/DashboardBits'
 import { useProcessorData } from '../context/useProcessorData'
 
@@ -7,10 +8,25 @@ import { useProcessorData } from '../context/useProcessorData'
  * many rooms a facility actually has).
  */
 export function ColdStoragePanel() {
+  const navigate = useNavigate()
   const { coldStorageRooms } = useProcessorData()
 
   return (
-    <Panel title="Cold storage" action={<a href="#" className="link">View all</a>}>
+    <Panel
+      title="Cold storage"
+      action={
+        <a
+          href="#"
+          className="link"
+          onClick={(e) => {
+            e.preventDefault()
+            navigate('/dashboard/processor/cold-storage')
+          }}
+        >
+          View all
+        </a>
+      }
+    >
       {coldStorageRooms.length === 0 ? (
         <p className="empty-state">No cold storage rooms configured yet.</p>
       ) : (

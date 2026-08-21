@@ -1,0 +1,23 @@
+.rb-fold-text {
+  margin: 0;
+  font-family: var(--heading, 'Fraunces', serif);
+  line-height: 1.08;
+  overflow-wrap: break-word;
+}
+
+.rb-fold-text__wrap {
+  display: inline-block;
+}
+
+.rb-fold-text__unit {
+  display: inline-block;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-fold-text__unit {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

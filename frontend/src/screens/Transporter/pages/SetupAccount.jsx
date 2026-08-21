@@ -153,12 +153,15 @@ export function SetupAccount({ user }) {
         fullName: fullname,
         nationalId,
         licenseNumber: driversLicense,
+        licenseExpiry,
+        accountType: signupAccountType,
         companyName,
         businessRegNumber: businessRegNo,
         contactPerson,
         vehicleRegistration: vehicleReg,
         vehicleType: vehicleType === 'Other' ? vehicleTypeOther : vehicleType,
         vehicleCapacity,
+        refrigerationAvailable: refrigeration === 'Yes',
       }
       await updateProfile(profileData)
       setSaving(false)

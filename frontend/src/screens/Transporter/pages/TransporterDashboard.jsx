@@ -12,7 +12,7 @@ import {
 } from "../../../components/DashboardBits";
 import { Icon, IconPaths } from "../../../components/icons";
 import { useAsync } from "../services/useTransporter";
-import { getAssignedDeliveries, getActiveTrip, getDeliveryHistory, traceAnimal } from "../services/transporterApi";
+import { getTransportMovements, getActiveTransportMovement, getTransportMovementHistory, traceAnimal } from "../services/transporterApi";
 import { AssignedDeliveries } from "./AssignedDeliveries";
 import { DeliveryDetails } from "./DeliveryDetails";
 import { CurrentTrip } from "./CurrentTrip";
@@ -34,9 +34,9 @@ const statusMeta = {
 function TransporterHome({ fullname }) {
   const navigate = useNavigate();
 
-  const { data: deliveries, loading: deliveriesLoading } = useAsync(getAssignedDeliveries, []);
-  const { data: trip, loading: tripLoading } = useAsync(getActiveTrip, []);
-  const { data: history, loading: historyLoading } = useAsync(getDeliveryHistory, []);
+  const { data: deliveries, loading: deliveriesLoading } = useAsync(getTransportMovements, []);
+  const { data: trip, loading: tripLoading } = useAsync(getActiveTransportMovement, []);
+  const { data: history, loading: historyLoading } = useAsync(getTransportMovementHistory, []);
 
   const isLoading = deliveriesLoading || tripLoading || historyLoading;
 
@@ -167,7 +167,7 @@ function TransporterHome({ fullname }) {
 
             <div>
               <Panel
-                title={hasActiveTrip ? `Active trip — ${trip.tripId || ""}` : "Active trip"}
+                title={hasActiveTrip ? `Active movement — ${trip.id || ""}` : "Active movement"}
                 action={
                   hasActiveTrip ? (
                     <Link

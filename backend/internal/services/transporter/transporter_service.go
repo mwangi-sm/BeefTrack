@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type Service struct{ repo *repo.Repository }
@@ -71,4 +72,37 @@ func (s *Service) Profile(c context.Context, actor string) (repo.Profile, error)
 }
 func (s *Service) UpdateProfile(c context.Context, actor string, values map[string]interface{}) (repo.Profile, error) {
 	return s.repo.UpdateProfile(c, actor, values)
+}
+
+func (s *Service) Movements(c context.Context, actor, status string, page, size int) ([]repo.Movement, int64, error) {
+	from, to := pageRange(page, size)
+	return s.repo.Movements(c, actor, strings.TrimSpace(status), from, to)
+}
+func (s *Service) Movement(c context.Context, actor, id string) (repo.Movement, error) {
+	return s.repo.Movement(c, actor, id)
+}
+func (s *Service) AcceptMovement(c context.Context, actor, id string) (repo.Movement, error) {
+	return s.repo.UpdateMovement(c, actor, id, "assigned", map[string]interface{}{"status": "accepted", "updated_at": time.Now().UTC()})
+}
+func (s *Service) StartMovement(c context.Context, actor, id string) (repo.Movement, error) {
+	return s.repo.UpdateMovement(c, actor, id, "accepted", map[string]interface{}{"status": "in_transit", "started_at": time.Now().UTC(), "updated_at": time.Now().UTC()})
+}
+func (s *Service) ActiveMovement(c context.Context, actor string) (*repo.Movement, error) {
+	return s.repo.ActiveMovement(c, actor)
+}
+func (s *Service) MovementHistory(c context.Context, actor string, page, size int) ([]repo.Movement, int64, error) {
+	from, to := pageRange(page, size)
+	return s.repo.MovementHistory(c, actor, from, to)
+}
+func (s *Service) AddTracking(c context.Context, actor, id string, input repo.TrackingInput) (repo.Tracking, error) {
+	if input.Latitude < -90 || input.Latitude > 90 || input.Longitude < -180 || input.Longitude > 180 {
+		return repo.Tracking{}, fmt.Errorf("invalid coordinates")
+	}
+	return s.repo.AddTracking(c, actor, id, input)
+}
+func (s *Service) DeliverMovement(c context.Context, actor, id string, input repo.DeliveryInput) (repo.Movement, error) {
+	if strings.TrimSpace(input.ReceiverName) == "" {
+		return repo.Movement{}, fmt.Errorf("receiver name is required")
+	}
+	return s.repo.DeliverMovement(c, actor, id, input)
 }

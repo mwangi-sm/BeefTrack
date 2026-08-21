@@ -22,15 +22,17 @@ export function getInitialProcessorState() {
   return {
     // Incoming Processing Queue — carcasses awaiting inspection/cutting
     carcasses: [],
-    // carcass shape: { id, animalId, grade, arrivalTime, status: 'ready' | 'inspection' | 'packaging', sourceSlaughterHouseId }
+    // carcass shape: { id, animalId, grade, arrivalTime, status, sourceSlaughterHouseId }
+    // status: 'ready' | 'inspection' | 'processing' | 'cold storage'
+    //   | 'in-processing' | 'on-hold' | 'completed' | 'pending approval'
 
     // Active Production Batches
     batches: [],
-    // batch shape: { id, product, category, weightKg, packages, stage: 'packaging' | 'needs-qr' | 'ready', createdAt }
+    // batch shape: { id, product, category, weightKg, packages, stage: 'packaging' | 'needs-qr' | 'ready', createdAt, createdDate }
 
     // Packaging Queue
     packagingQueue: [],
-    // item shape: { batchId, packagingType, operator, startedAt, progressPercent: number | 'complete' }
+    // item shape: { batchId, packagingType, operator, startedAt, dateAdded, progressPercent: number | 'complete', status: 'in-packaging' | 'on-hold' | 'completed' }
 
     // QR Generation summary
     qr: {
@@ -58,9 +60,16 @@ export function getInitialProcessorState() {
       foodSafetyStatus: null, // 'compliant' | 'flagged' | null
     },
 
-    // Cold Storage rooms
+    // Cold Storage rooms — capacity tracking only, not item-level records.
     coldStorageRooms: [],
     // room shape: { id: 'A' | 'B' | 'C' ..., percentFull }
+
+    // Cold Storage items — individual stored records (see ColdStoragePage.jsx).
+    coldStorageItems: [],
+    // item shape: { id, itemType: 'carcass' | 'cut' | 'package', sourceId,
+    //   details: object (shape varies by itemType), status: 'Pending Approval'
+    //   | 'Packaged' | 'Processed' | 'Pending QR' | 'Completed' | 'Delivered',
+    //   dateAdded, addedAt }
 
     notifications: [],
     // notification shape: { id, message, type: 'warning' | 'success' | 'info', createdAt }
@@ -130,4 +139,14 @@ export function computeProcessorStats(state) {
  */
 export function formatTimestamp(date = new Date()) {
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+}
+
+/**
+ * Formats a Date (or now) into a "Jul 17, 2026" style date string, paired
+ * alongside formatTimestamp's time-only output so batches, packaging queue
+ * items, and cold storage items can show a real creation/added date, not
+ * just a time.
+ */
+export function formatDateLabel(date = new Date()) {
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
 }

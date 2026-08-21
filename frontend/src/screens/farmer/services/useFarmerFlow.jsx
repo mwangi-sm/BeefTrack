@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SEED_FARMS, SEED_ANIMALS } from '../data/farmerSeedData'
 
@@ -12,10 +12,15 @@ import { SEED_FARMS, SEED_ANIMALS } from '../data/farmerSeedData'
 // wouldn't reliably resolve to wherever FarmerRoutes ends up mounted.
 export function useFarmerFlow(basePath) {
   const navigate = useNavigate()
+  const [isLoading, setIsLoading] = useState(true)
   const [farmerSetup, setFarmerSetup] = useState({ profile: false, farm: false, animal: false })
   const [farms, setFarms] = useState(SEED_FARMS)
   const [animals, setAnimals] = useState(SEED_ANIMALS)
   const [traceabilityHistory, setTraceabilityHistory] = useState([])
+
+  useEffect(() => {
+    setIsLoading(false)
+  }, [])
 
   const goFarmerDashboard = () => navigate(basePath)
   const goFarmerProfileSetup = () => navigate(`${basePath}/setup/profile`)
@@ -28,6 +33,10 @@ export function useFarmerFlow(basePath) {
   const goMyAnimals = () => navigate(`${basePath}/animals`)
   const goAnimalDetails = (animalId) => navigate(`${basePath}/animals/${animalId}`)
   const goFarmerNotBuilt = () => navigate(`${basePath}/not-built`)
+  const goFarmerNotifications = () => navigate(`${basePath}/notifications`)
+  const goFarmerProfile = () => navigate(`${basePath}/profile`)
+  const goFarmerSales = () => navigate(`${basePath}/sales`)
+  const goFarmerSettings = () => navigate(`${basePath}/settings`)
   const goFarmerTraceability = () => navigate(`${basePath}/traceability`)
   const goFarmerTraceabilityHistory = () => navigate(`${basePath}/traceability/history`)
   const recordTraceabilityLookup = (value) => {
@@ -151,11 +160,15 @@ export function useFarmerFlow(basePath) {
     onGoMyAnimals: goMyAnimals,
     onGoHealthRecords: goFarmerHealthRecords,
     onGoNotBuilt: goFarmerNotBuilt,
+    onGoNotifications: goFarmerNotifications,
+    onGoSales: goFarmerSales,
+    onGoSettings: goFarmerSettings,
   }
 
   return {
     farms,
     animals,
+    isLoading,
     farmerSetup,
     navHandlers,
     goFarmerDashboard,
@@ -169,6 +182,10 @@ export function useFarmerFlow(basePath) {
     goMyAnimals,
     goAnimalDetails,
     goFarmerNotBuilt,
+    goFarmerNotifications,
+    goFarmerProfile,
+    goFarmerSales,
+    goFarmerSettings,
     goFarmerTraceability,
     goFarmerTraceabilityHistory,
     traceabilityHistory,

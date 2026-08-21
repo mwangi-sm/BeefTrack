@@ -12,6 +12,10 @@ import { MyAnimals } from './MyAnimals'
 import { AnimalDetails } from './AnimalDetails'
 import { Placeholder } from '../../public/StaticScreens'
 import { FarmerTraceabilityHistory, FarmerTraceabilityLookup } from './FarmerTraceabilityLookup'
+import { FarmerNotifications } from './FarmerNotifications'
+import { FarmerProfile } from './FarmerProfile'
+import { FarmerSales } from './FarmerSales'
+import { FarmerSettings } from './FarmerSettings'
 
 function FarmDetailsPage({ flow, onToggleTheme, onLogout }) {
   const { farmId } = useParams()
@@ -63,7 +67,7 @@ function AnimalDetailsPage({ flow, onToggleTheme, onLogout }) {
   )
 }
 
-export function FarmerRoutes({ flow, onLogout, onToggleTheme }) {
+export function FarmerRoutes({ flow, user, fullname, onLogout, onToggleTheme }) {
   return (
     <Routes>
       <Route
@@ -72,6 +76,8 @@ export function FarmerRoutes({ flow, onLogout, onToggleTheme }) {
           <FarmerDashboard
             onLogout={onLogout}
             onToggleTheme={onToggleTheme}
+            user={user}
+            fullname={fullname}
             farms={flow.farms.map((f) => ({ ...f, animalCount: flow.animals.filter((a) => a.farmId === f.id).length }))}
             animalsCount={flow.animals.length}
             setup={flow.farmerSetup}
@@ -83,9 +89,24 @@ export function FarmerRoutes({ flow, onLogout, onToggleTheme }) {
             onGoMyFarms={flow.goMyFarms}
             onGoMyAnimals={flow.goMyAnimals}
             onGoNotBuilt={flow.goFarmerNotBuilt}
+            onGoNotifications={flow.goFarmerNotifications}
+            onGoProfile={flow.goFarmerProfile}
+            onGoSales={flow.goFarmerSales}
+            onGoSettings={flow.goFarmerSettings}
+            isLoading={flow.isLoading}
           />
         }
       />
+      <Route
+        path="notifications"
+        element={<FarmerNotifications fullname={fullname} onGoDashboard={flow.goFarmerDashboard} onToggleTheme={onToggleTheme} onLogout={onLogout} {...flow.navHandlers} />}
+      />
+      <Route
+        path="profile"
+        element={<FarmerProfile user={user} fullname={fullname} onGoDashboard={flow.goFarmerDashboard} onToggleTheme={onToggleTheme} onLogout={onLogout} {...flow.navHandlers} />}
+      />
+      <Route path="sales" element={<FarmerSales fullname={fullname} onGoDashboard={flow.goFarmerDashboard} onToggleTheme={onToggleTheme} onLogout={onLogout} {...flow.navHandlers} />} />
+      <Route path="settings" element={<FarmerSettings user={user} fullname={fullname} onGoDashboard={flow.goFarmerDashboard} onToggleTheme={onToggleTheme} onLogout={onLogout} {...flow.navHandlers} />} />
       <Route path="traceability" element={<FarmerTraceabilityLookup onGoHome={flow.goFarmerDashboard} onLookup={flow.recordTraceabilityLookup} onSeeHistory={flow.goFarmerTraceabilityHistory} />} />
       <Route path="traceability/history" element={<FarmerTraceabilityHistory onGoHome={flow.goFarmerDashboard} history={flow.traceabilityHistory} onBack={flow.goFarmerTraceability} />} />
       <Route

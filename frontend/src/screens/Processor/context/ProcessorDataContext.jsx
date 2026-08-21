@@ -5,6 +5,7 @@ import {
   computeProcessorStats,
   genId,
   formatTimestamp,
+  formatDateLabel,
 } from './processorDataUtils'
 
 /**
@@ -86,6 +87,7 @@ export function ProcessorDataProvider({ children }) {
         packages,
         stage: 'packaging',
         createdAt: formatTimestamp(),
+        createdDate: formatDateLabel(),
       }
       setState((prev) => ({
         ...prev,
@@ -124,7 +126,13 @@ export function ProcessorDataProvider({ children }) {
             packagingType,
             operator,
             startedAt: formatTimestamp(),
+            dateAdded: formatDateLabel(),
             progressPercent: 0,
+            // Default status once a batch enters packaging — mirrors
+            // carcasses' 'in-processing' state. Changed via
+            // updatePackagingItemStatus() by the "In packaging" section's
+            // Hold/Complete buttons on PackagingPageContent.
+            status: 'in-packaging',
           },
           ...prev.packagingQueue,
         ],
@@ -143,6 +151,19 @@ export function ProcessorDataProvider({ children }) {
       ),
     }))
   }, [])
+
+  // Sets a packaging queue item's Hold/Complete state, mirroring
+  // updateCarcassStatus's role for the "In processing" section.
+  const updatePackagingItemStatus = useCallback((batchId, status) => {
+    // TODO: replace with PATCH /api/processor/packaging/:batchId/status
+    setState((prev) => ({
+      ...prev,
+      packagingQueue: prev.packagingQueue.map((p) =>
+        p.batchId === batchId ? { ...p, status } : p
+      ),
+    }))
+    logActivity(`Packaging item ${batchId} moved to ${status}`)
+  }, [logActivity])
 
   // ---- QR Generation ----
 
@@ -197,7 +218,7 @@ export function ProcessorDataProvider({ children }) {
     [logActivity]
   )
 
-  // ---- Cold Storage ----
+  // ---- Cold Storage rooms (capacity) ----
 
   const updateColdStorageRoom = useCallback((roomId, percentFull) => {
     // TODO: replace with PATCH /api/processor/cold-storage/:roomId
@@ -210,6 +231,45 @@ export function ProcessorDataProvider({ children }) {
         : [...prev.coldStorageRooms, { id: roomId, percentFull }]
       return { ...prev, coldStorageRooms }
     })
+  }, [])
+
+  // ---- Cold Storage items ----
+
+  // Adds a stored item record — called from ProceesingQueuePage.jsx when a
+  // carcass is sent to "Cold storage" (itemType 'carcass') or "Completed"
+  // from the In processing section (itemType 'cut'), and from
+  // PackagingQueue.jsx when a package is "Completed" from the In packaging
+  // section (itemType 'package').
+  const addToColdStorage = useCallback(
+    ({ itemType, sourceId, details, status }) => {
+      // TODO: replace with POST /api/processor/cold-storage-items
+      const item = {
+        id: genId('CS'),
+        itemType,
+        sourceId,
+        details,
+        status,
+        dateAdded: formatDateLabel(),
+        addedAt: formatTimestamp(),
+      }
+      setState((prev) => ({
+        ...prev,
+        coldStorageItems: [item, ...prev.coldStorageItems],
+      }))
+      logActivity(`${itemType} ${sourceId} added to cold storage`)
+      return item.id
+    },
+    [logActivity]
+  )
+
+  const updateColdStorageItemStatus = useCallback((itemId, status) => {
+    // TODO: replace with PATCH /api/processor/cold-storage-items/:id
+    setState((prev) => ({
+      ...prev,
+      coldStorageItems: prev.coldStorageItems.map((i) =>
+        i.id === itemId ? { ...i, status } : i
+      ),
+    }))
   }, [])
 
   // ---- Profile ----
@@ -231,10 +291,13 @@ export function ProcessorDataProvider({ children }) {
       updateBatchStage,
       addToPackagingQueue,
       updatePackagingProgress,
+      updatePackagingItemStatus,
       generateQR,
       updateInventory,
       recordInspection,
       updateColdStorageRoom,
+      addToColdStorage,
+      updateColdStorageItemStatus,
       addNotification,
       setProfile,
     }),
@@ -247,10 +310,13 @@ export function ProcessorDataProvider({ children }) {
       updateBatchStage,
       addToPackagingQueue,
       updatePackagingProgress,
+      updatePackagingItemStatus,
       generateQR,
       updateInventory,
       recordInspection,
       updateColdStorageRoom,
+      addToColdStorage,
+      updateColdStorageItemStatus,
       addNotification,
       setProfile,
     ]

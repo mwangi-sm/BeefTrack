@@ -3,17 +3,18 @@ import { DashboardShell } from '../../../components/DashboardShell'
 import { IconPaths } from '../../../components/icons'
 import { useProcessorData } from '../context/useProcessorData'
 
-export function ProcessorShell({ onLogout, onToggleTheme, children }) {
+export function ProcessorShell({ onLogout, onToggleTheme, userName = 'User', children }) {
   const navigate = useNavigate()
   const { profile } = useProcessorData()
 
-  const companyName = profile?.companyName || 'User'
+  // profile.companyName is only ever set via context's setProfile(), which
+  // nothing currently calls (Processor has no ProfileSetupWizard yet, unlike
+  // DistributorShell -> profile.company.distributorName). Until that wizard
+  // exists, fall back to the signup-derived userName so the sidebar shows
+  // the name the user actually entered, instead of a hardcoded placeholder.
+  const companyName = profile?.companyName || userName
   const actorId = profile?.actorId || 'Not yet assigned'
 
-  // Only Dashboard and Processing queue have real destinations right now —
-  // the rest point back at the dashboard (same treatment Distributor gave
-  // Delivery tracking before its own screen existed), except Notifications
-  // and Settings, which stay true no-ops until dedicated screens exist.
   const navItems = [
     {
       label: 'Dashboard',
@@ -23,22 +24,22 @@ export function ProcessorShell({ onLogout, onToggleTheme, children }) {
     {
       label: 'Processing queue',
       icon: IconPaths.route,
-      onClick: () => navigate('/dashboard/processor/processing-queue'),
+      onClick: () => navigate('/dashboard/processor/queue'),
     },
     {
-      label: 'Incoming carcasses',
+      label: 'In processing',
       icon: IconPaths.abattoir,
-      onClick: () => navigate('/dashboard/processor/processing-queue'),
+      onClick: () => navigate('/dashboard/processor/queue#in-processing-section'),
     },
     {
       label: 'Batch management',
       icon: IconPaths.cut,
-      onClick: () => navigate('/dashboard/processor'),
+      onClick: () => navigate('/dashboard/processor/batches'),
     },
     {
       label: 'Packaging',
       icon: IconPaths.storefront,
-      onClick: () => navigate('/dashboard/processor'),
+      onClick: () => navigate('/dashboard/processor/packaging'),
     },
     {
       label: 'QR generation',
@@ -58,7 +59,7 @@ export function ProcessorShell({ onLogout, onToggleTheme, children }) {
     {
       label: 'Cold storage',
       icon: IconPaths.warehouse,
-      onClick: () => navigate('/dashboard/processor'),
+      onClick: () => navigate('/dashboard/processor/cold-storage'),
     },
     {
       label: 'Reports',

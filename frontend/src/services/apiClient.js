@@ -23,16 +23,44 @@ function messageFor(status) {
 }
 
 export async function apiRequest(path, options = {}) {
-  const { data, error } = await getSupabase().auth.getSession();
+  const supabase = getSupabase();
+  const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
-  const headers = new Headers(options.headers || {});
-  headers.set("Accept", "application/json");
-  if (data.session?.access_token) headers.set("Authorization", `Bearer ${data.session.access_token}`);
-  if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  let session = data.session;
+  // Do not send an unauthenticated request merely because a tab restored
+  // before Supabase finished restoring/rotating its persisted session.
+  if (!session?.access_token) {
+    const refreshed = await supabase.auth.refreshSession();
+    if (refreshed.error) throw refreshed.error;
+    session = refreshed.data.session;
+  }
+  if (!session?.access_token) {
+    throw new ApiError(401, "No active BeefTrace session is available. Please sign in again.");
+  }
+  async function send(session) {
+    const headers = new Headers(options.headers || {});
+    headers.set("Accept", "application/json");
+    headers.set("Authorization", `Bearer ${session.access_token}`);
+    if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+    if (import.meta.env.DEV) {
+      // Intentionally do not log the credential itself.
+      console.debug(`[BeefTrace API] Bearer token attached: ${path}`);
+    }
+    return fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+  }
 
   let response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+    response = await send(session);
+    // A stored browser token can predate a Supabase signing-key rotation.
+    // Refresh it once before surfacing 401; never retry other failures or
+    // loop indefinitely.
+    if (response.status === 401 && session.refresh_token) {
+      const refreshed = await supabase.auth.refreshSession();
+      if (!refreshed.error && refreshed.data.session?.access_token) {
+        response = await send(refreshed.data.session);
+      }
+    }
   } catch (cause) {
     throw new ApiError(0, "Unable to reach the BeefTrace API. Check your connection and try again.", cause);
   }

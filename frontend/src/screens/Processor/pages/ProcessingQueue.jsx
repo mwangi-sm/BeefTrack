@@ -9,7 +9,7 @@ const STATUS_LABELS = {
 
 /**
  * Incoming Processing Queue preview on the processor dashboard.
- * Carcasses that have moved to "packaging" are hidden here — they only
+ * Carcasses that have moved to "processing" are hidden here — they only
  * show up on the full processing queue page. Clicking "Start"/"Continue"
  * or "View all" navigates to that page, where the actual status change
  * (with confirmation) happens.
@@ -18,7 +18,7 @@ export function ProcessingQueue() {
   const { carcasses } = useProcessorData()
   const navigate = useNavigate()
 
-  const visibleCarcasses = carcasses.filter((c) => c.status !== 'packaging')
+  const visibleCarcasses = carcasses.filter((c) => c.status !== 'processing')
 
   const goToQueue = () => navigate('/dashboard/processor/queue')
 

@@ -9,7 +9,7 @@ import {
 } from "../../../components/DashboardBits";
 import { IconPaths } from "../../../components/icons";
 import { useAsync } from "../services/useTransporter";
-import { getAssignedDeliveries } from "../services/transporterApi";
+import { getTransportMovements } from "../services/transporterApi";
 
 const statusMeta = {
   overdue: { status: "overdue", label: "Running late" },
@@ -26,7 +26,7 @@ export function AssignedDeliveries() {
     loading,
     error,
     reload,
-  } = useAsync(getAssignedDeliveries, []);
+  } = useAsync(getTransportMovements, []);
 
   return (
     <>
@@ -62,7 +62,7 @@ export function AssignedDeliveries() {
                 key={d.id}
                 id={d.id}
                 type={`${d.pickup} → ${d.destination}`}
-                due={d.pickupTime || d.assignedAt}
+                due={d.scheduledAt || d.createdAt}
                 status={meta.status}
                 label={meta.label}
                 onClick={() =>

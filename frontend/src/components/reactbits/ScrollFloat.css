@@ -1,0 +1,16 @@
+.rb-scroll-float {
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.rb-scroll-float__char {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-scroll-float__char {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

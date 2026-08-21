@@ -5,6 +5,7 @@ import { DashHead } from '../../../components/DashHead'
 import { NoteBanner, StatCard, Panel, CareRow } from '../../../components/DashboardBits'
 import { TextInput, SelectInput, TextArea } from '../../farmer/components/SetupBits'
 import { Icon, IconPaths } from '../../../components/icons'
+import { StrokeText, SplitText, DecryptedText } from '../../../components/reactbits'
 import '../components/VeterinaryDashboard.css'
 
 const NEEDS_ATTENTION = ['Under treatment', 'Sick', 'Quarantined', 'Needs Attention']
@@ -12,7 +13,7 @@ const NEEDS_ATTENTION = ['Under treatment', 'Sick', 'Quarantined', 'Needs Attent
 // `onOpenLookup` is called when the "Animal lookup" nav item is clicked —
 // wire it to however your app switches screens (setState or react-router
 // navigate()); see the two wiring examples in the accompanying notes.
-export function VeterinaryDashboard({ onLogout, onToggleTheme, farms, animals, onRecordInspection, onOpenLookup, onOpenTraceability, onOpenLogVisit, onOpenInspectionHistory }) {
+export function VeterinaryDashboard({ onLogout, onToggleTheme, fullname = 'Veterinary officer', farms, animals, onRecordInspection, onOpenLookup, onOpenTraceability, onOpenLogVisit, onOpenInspectionHistory }) {
   const [lookup, setLookup] = useState('')
   const [foundAnimal, setFoundAnimal] = useState(null)
   const [notFound, setNotFound] = useState(false)
@@ -39,8 +40,9 @@ export function VeterinaryDashboard({ onLogout, onToggleTheme, farms, animals, o
 
   const handleLookup = (e) => {
     e.preventDefault()
+    const normalizedLookup = lookup.trim().toLowerCase()
     const match = animals.find(
-      (a) => a.id.toLowerCase() === lookup.trim().toLowerCase() || a.rfid.toLowerCase() === lookup.trim().toLowerCase()
+      (a) => String(a.id || '').toLowerCase() === normalizedLookup || String(a.rfid || '').toLowerCase() === normalizedLookup
     )
     if (match) {
       setFoundAnimal(match)
@@ -74,15 +76,29 @@ export function VeterinaryDashboard({ onLogout, onToggleTheme, farms, animals, o
     <DashboardShell
       roleLabel="VETERINARY"
       actorId="VT-000102"
-      name="Dr. Achieng Otieno"
+      name={fullname}
       navItems={navItems}
       onLogout={onLogout}
       onToggleTheme={onToggleTheme}
       variant="home"
     >
       <DashHead
-        greeting="Good morning, Dr. Otieno"
-        title="Dashboard"
+        greeting={`Good morning,  ${fullname}`}
+        title={
+          <StrokeText
+            as="span"
+            text="Animal Health & Certification"
+            strokeColor="var(--gold-600)"
+            fillColor="var(--ink-900)"
+            strokeWidth={1.1}
+            drawDuration={1}
+            fillDelay={0.12}
+            stagger={0.02}
+            fontSize={36}
+            fontWeight={700}
+            letterSpacing={-1}
+          />
+        }
         subtitle="Animals under your care, across every farm you're linked to."
         actions={
           <>
@@ -107,7 +123,7 @@ export function VeterinaryDashboard({ onLogout, onToggleTheme, farms, animals, o
 
       <div className="grid-2col">
         <div>
-          <Panel title="Animals needing attention">
+          <Panel title={<SplitText tag="span" text="Animals needing attention" splitType="words" duration={0.4} />}>
             {attentionAnimals.length === 0 ? (
               <p style={{ color: 'var(--ink-600)', fontSize: 13.5 }}>
                 {animals.length === 0 ? 'No animals linked to you yet.' : 'Every animal you cover is currently marked healthy.'}
@@ -116,7 +132,7 @@ export function VeterinaryDashboard({ onLogout, onToggleTheme, farms, animals, o
               attentionAnimals.map((a) => (
                 <CareRow
                   key={a.id}
-                  id={a.id}
+                  id={<DecryptedText text={a.id} animateOn="view" speed={30} maxIterations={6} />}
                   type={`${a.breed || 'Breed not recorded'} · ${farmNameFor(a.farmId)}`}
                   due={a.diseases || 'No notes on file'}
                   status={a.healthStatus === 'Quarantined' ? 'overdue' : 'soon'}
@@ -126,7 +142,7 @@ export function VeterinaryDashboard({ onLogout, onToggleTheme, farms, animals, o
             )}
           </Panel>
 
-          <Panel title="Recent inspections">
+          <Panel title={<SplitText tag="span" text="Recent inspections" splitType="words" duration={0.4} />}>
             {recentVisits.length === 0 ? (
               <p style={{ color: 'var(--ink-600)', fontSize: 13.5 }}>No inspections logged yet.</p>
             ) : (
@@ -135,7 +151,7 @@ export function VeterinaryDashboard({ onLogout, onToggleTheme, farms, animals, o
                   <span className="activity-dot"></span>
                   <div>
                     <div className="activity-text">
-                      <b>{v.animalId}</b> — {v.notes || 'No notes recorded'}
+                      <b><DecryptedText text={v.animalId} animateOn="view" speed={30} maxIterations={6} monospace={false} /></b> — {v.notes || 'No notes recorded'}
                     </div>
                     <div className="activity-time">{v.date} · {v.vetName}</div>
                   </div>
@@ -146,7 +162,7 @@ export function VeterinaryDashboard({ onLogout, onToggleTheme, farms, animals, o
         </div>
 
         <div>
-          <Panel title="Look up an animal">
+          <Panel title={<SplitText tag="span" text="Look up an animal" splitType="words" duration={0.4} />}>
             <form onSubmit={handleLookup}>
               <TextInput
                 label="Animal BeefTrace ID or RFID number"
@@ -168,7 +184,7 @@ export function VeterinaryDashboard({ onLogout, onToggleTheme, farms, animals, o
             {foundAnimal && (
               <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border-soft)' }}>
                 <p className="onboard-heading" style={{ marginBottom: 12 }}>
-                  {foundAnimal.id} · {foundAnimal.breed || 'Breed not recorded'} · {farmNameFor(foundAnimal.farmId)}
+                  <DecryptedText text={foundAnimal.id} animateOn="view" speed={30} maxIterations={6} monospace={false} /> · {foundAnimal.breed || 'Breed not recorded'} · {farmNameFor(foundAnimal.farmId)}
                 </p>
                 <form onSubmit={handleLogInspection}>
                   <SelectInput

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useProcessorData } from '../context/useProcessorData'
 
 const PACKAGING_TYPE_OPTIONS = ['Vacuum', 'Shrink Wrap', 'Tray Pack']
@@ -8,8 +8,13 @@ const PACKAGING_TYPE_OPTIONS = ['Vacuum', 'Shrink Wrap', 'Tray Pack']
  * batches currently in the 'packaging' stage that isn't already in the
  * packaging queue, assign a packaging type and operator, and adds it to
  * the Packaging Queue via context.
+ *
+ * initialBatchId (optional): when set, pre-selects that batch in the
+ * dropdown on open — used by BatchTable's "Continue" action so the modal
+ * isn't blank when arriving from a specific packaging-stage batch. Still
+ * freely editable; not a lock.
  */
-export function PackageProductsModal({ isOpen, onClose }) {
+export function PackageProductsModal({ isOpen, onClose, initialBatchId = null }) {
   const { batches, packagingQueue, addToPackagingQueue } = useProcessorData()
   const [batchId, setBatchId] = useState('')
   const [packagingType, setPackagingType] = useState(PACKAGING_TYPE_OPTIONS[0])
@@ -20,6 +25,19 @@ export function PackageProductsModal({ isOpen, onClose }) {
   const eligibleBatches = batches.filter(
     (b) => b.stage === 'packaging' && !queuedBatchIds.has(b.id)
   )
+
+  // Initialize batch form when modal opens with the provided initialBatchId.
+  // We intentionally only depend on isOpen to avoid re-running when eligibleBatches changes.
+  useEffect(() => {
+    if (isOpen && initialBatchId && eligibleBatches.some((b) => b.id === initialBatchId)) {
+      // Use setTimeout to defer setState call and avoid cascading renders
+      const timer = setTimeout(() => {
+        setBatchId(initialBatchId)
+      }, 0)
+      return () => clearTimeout(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   if (!isOpen) return null
 

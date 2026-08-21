@@ -43,8 +43,12 @@ func fail(w http.ResponseWriter, e error) {
 		utils.Fail(w, 409, "This action conflicts with the current record state.", e.Error())
 		return
 	}
-	if e.Error() == "invalid status" || e.Error() == "issue note is required" {
+	if e.Error() == "invalid status" || e.Error() == "issue note is required" || e.Error() == "invalid coordinates" || e.Error() == "receiver name is required" || e.Error() == "transporter setup is incomplete" {
 		utils.Fail(w, 422, "Some information is invalid. Please review and try again.", e.Error())
+		return
+	}
+	if e.Error() == "duplicate delivery" {
+		utils.Fail(w, 409, "This movement already has a delivery record.", e.Error())
 		return
 	}
 	utils.Fail(w, 500, "The BeefTrace service could not complete the request.", "service unavailable")
@@ -177,4 +181,89 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	utils.Success(w, 200, "Profile updated", v)
+}
+
+func (h *Handler) Movements(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor(r)
+	p, z := paging(r)
+	v, t, e := h.service.Movements(r.Context(), a, r.URL.Query().Get("status"), p, z)
+	if e != nil {
+		fail(w, e)
+		return
+	}
+	utils.Success(w, 200, "Movements retrieved", map[string]interface{}{"items": v, "total": t})
+}
+func (h *Handler) Movement(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor(r)
+	v, e := h.service.Movement(r.Context(), a, r.PathValue("id"))
+	if e != nil {
+		fail(w, e)
+		return
+	}
+	utils.Success(w, 200, "Movement retrieved", v)
+}
+func (h *Handler) AcceptMovement(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor(r)
+	v, e := h.service.AcceptMovement(r.Context(), a, r.PathValue("id"))
+	if e != nil {
+		fail(w, e)
+		return
+	}
+	utils.Success(w, 200, "Movement accepted", v)
+}
+func (h *Handler) StartMovement(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor(r)
+	v, e := h.service.StartMovement(r.Context(), a, r.PathValue("id"))
+	if e != nil {
+		fail(w, e)
+		return
+	}
+	utils.Success(w, 200, "Movement started", v)
+}
+func (h *Handler) ActiveMovement(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor(r)
+	v, e := h.service.ActiveMovement(r.Context(), a)
+	if e != nil {
+		fail(w, e)
+		return
+	}
+	utils.Success(w, 200, "Active movement retrieved", v)
+}
+func (h *Handler) MovementHistory(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor(r)
+	p, z := paging(r)
+	v, t, e := h.service.MovementHistory(r.Context(), a, p, z)
+	if e != nil {
+		fail(w, e)
+		return
+	}
+	utils.Success(w, 200, "Movement history retrieved", map[string]interface{}{"items": v, "total": t})
+}
+func (h *Handler) AddTracking(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor(r)
+	var b repo.TrackingInput
+	if json.NewDecoder(r.Body).Decode(&b) != nil {
+		utils.Fail(w, 400, "Invalid request.", "invalid JSON")
+		return
+	}
+	v, e := h.service.AddTracking(r.Context(), a, r.PathValue("id"), b)
+	if e != nil {
+		fail(w, e)
+		return
+	}
+	utils.Success(w, 201, "Tracking checkpoint recorded", v)
+}
+func (h *Handler) DeliverMovement(w http.ResponseWriter, r *http.Request) {
+	a, _ := actor(r)
+	var b repo.DeliveryInput
+	if json.NewDecoder(r.Body).Decode(&b) != nil {
+		utils.Fail(w, 400, "Invalid request.", "invalid JSON")
+		return
+	}
+	v, e := h.service.DeliverMovement(r.Context(), a, r.PathValue("id"), b)
+	if e != nil {
+		fail(w, e)
+		return
+	}
+	utils.Success(w, 200, "Movement delivered", v)
 }

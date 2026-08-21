@@ -177,6 +177,12 @@ export function FarmSetup({
           <p className="setup-title">Farm Setup</p>
           <p className="setup-subtitle">Register the details of the farm this animal data will belong to.</p>
 
+          <div className="setup-progress" aria-label="Farm enrollment progress">
+            <span className="setup-progress-step active">1. Farm details</span>
+            <span className="setup-progress-step">2. Location</span>
+            <span className="setup-progress-step">3. Review</span>
+          </div>
+
           <form>
             <SectionTitle>Basic farm information</SectionTitle>
 

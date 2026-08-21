@@ -87,9 +87,22 @@ export function ActivityItem({ text, time }) {
   )
 }
 
-export function InventoryRow({ icon, name, sub, count }) {
+export function InventoryRow({ icon, name, sub, count, onClick }) {
+  const clickable = typeof onClick === 'function'
+
   return (
-    <div className="farm-item">
+    <div
+      className={`farm-item${clickable ? ' clickable' : ''}`}
+      onClick={onClick}
+      onKeyDown={clickable ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onClick(event)
+        }
+      } : undefined}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+    >
       <div className="farm-thumb">
         <Icon>{icon}</Icon>
       </div>

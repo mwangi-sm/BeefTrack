@@ -193,6 +193,13 @@ export function AnimalSetup({ farms, onGoFarm, onFinish, onCancel, onToggleTheme
           <p className="setup-title">Enroll New Animal</p>
           <p className="setup-subtitle">Register an animal against one of your farms.</p>
 
+          <div className="setup-progress" aria-label="Animal enrollment progress">
+            <span className="setup-progress-step active">1. Farm</span>
+            <span className="setup-progress-step">2. Identity</span>
+            <span className="setup-progress-step">3. Health</span>
+            <span className="setup-progress-step">4. Review</span>
+          </div>
+
           <div className="setup-field-row" style={{ marginBottom: 18 }}>
             <button
               type="button"

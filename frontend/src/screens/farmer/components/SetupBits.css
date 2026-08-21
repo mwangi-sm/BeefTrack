@@ -70,6 +70,9 @@
   display:flex;gap:12px;flex-wrap:wrap;margin-top:36px;padding-top:28px;border-top:1px solid var(--border-soft);
 }
 .setup-actions .btn{flex:1;min-width:200px;padding:13px;}
+.setup-progress{display:flex;gap:6px;margin:20px 0 24px;overflow-x:auto;padding-bottom:2px;}
+.setup-progress-step{flex:1 0 auto;padding:8px 10px;border-radius:8px;background:var(--page-bg);color:var(--ink-600);font-size:11.5px;font-weight:600;text-align:center;border:1px solid var(--border-soft);}
+.setup-progress-step.active{background:rgba(236,204,23,.14);border-color:var(--gold-600);color:var(--maroon-800);}
 
 @media (max-width:640px){
   .setup-card{padding:28px 22px 32px;}

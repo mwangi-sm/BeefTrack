@@ -10,9 +10,11 @@ import {
 import { Icon, IconPaths } from "../../../components/icons";
 import { useAsync } from "../services/useTransporter";
 import {
-  getDeliveryById,
-  acceptDelivery,
-  startTrip,
+  getTransportMovement,
+  acceptTransportMovement,
+  startTransportMovement,
+  addTransportMovementTracking,
+  deliverTransportMovement,
   reportIssue,
 } from "../services/transporterApi";
 
@@ -24,15 +26,20 @@ export function DeliveryDetails() {
     loading,
     error,
     reload,
-  } = useAsync(() => getDeliveryById(id), [id]);
+  } = useAsync(() => getTransportMovement(id), [id]);
   const [busy, setBusy] = useState(false);
   const [issueOpen, setIssueOpen] = useState(false);
   const [issueNote, setIssueNote] = useState("");
+  const [receiverName, setReceiverName] = useState("");
+  const [receiverPhone, setReceiverPhone] = useState("");
+  const [condition, setCondition] = useState("");
+  const [deliveryNotes, setDeliveryNotes] = useState("");
+  const [actionError, setActionError] = useState("");
 
   async function handleAccept() {
     setBusy(true);
     try {
-      await acceptDelivery(id);
+      await acceptTransportMovement(id);
       reload();
     } finally {
       setBusy(false);
@@ -42,11 +49,31 @@ export function DeliveryDetails() {
   async function handleStartTrip() {
     setBusy(true);
     try {
-      await startTrip(id);
+      await startTransportMovement(id);
       navigate(`/dashboard/transporter/trip`);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleLocation() {
+    setActionError("");
+    if (!navigator.geolocation) { setActionError("GPS is not available in this browser."); return; }
+    setBusy(true);
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      try { await addTransportMovementTracking(id, { latitude: coords.latitude, longitude: coords.longitude, speed: coords.speed ?? undefined }); reload(); }
+      catch (error) { setActionError(error.message || "Unable to record location."); }
+      finally { setBusy(false); }
+    }, () => { setActionError("Location permission is required to record a checkpoint."); setBusy(false); }, { enableHighAccuracy: true });
+  }
+
+  async function handleDeliver() {
+    setActionError(""); setBusy(true);
+    try {
+      await deliverTransportMovement(id, { receiverName, receiverPhone, destination: delivery.destinationAddress, condition, notes: deliveryNotes });
+      reload();
+    } catch (error) { setActionError(error.message || "Unable to complete delivery."); }
+    finally { setBusy(false); }
   }
 
   async function handleReportIssue() {
@@ -93,10 +120,10 @@ export function DeliveryDetails() {
         <div className="grid-2col">
           <div>
             <Panel title="Shipment details">
-              <DetailRow label="Assignment ID" value={delivery.id} />
-              <DetailRow label="Trip ID" value={delivery.tripId || 'Not started'} />
-              <DetailRow label="Assigned at" value={delivery.assignedAt} />
-              <DetailRow label="Pickup time" value={delivery.pickupTime || 'Not scheduled'} />
+              <DetailRow label="Movement ID" value={delivery.id} />
+              <DetailRow label="Origin" value={delivery.originAddress} />
+              <DetailRow label="Destination" value={delivery.destinationAddress} />
+              <DetailRow label="Scheduled time" value={delivery.scheduledAt || 'Not scheduled'} />
             </Panel>
 
             {issueOpen && (
@@ -178,9 +205,7 @@ export function DeliveryDetails() {
                     Accept delivery
                   </button>
                 )}
-                {(delivery.status === "assigned" ||
-                  delivery.status === "overdue" ||
-                  delivery.status === "accepted") && (
+                {delivery.status === "accepted" && (
                   <button
                     className="btn btn-outline"
                     disabled={busy}
@@ -192,6 +217,22 @@ export function DeliveryDetails() {
                     Start trip
                   </button>
                 )}
+                {delivery.status === "in_transit" && (
+                  <>
+                    <button className="btn btn-outline" disabled={busy} onClick={handleLocation}>Update location</button>
+                    <label style={{ fontSize: 12, fontWeight: 600 }}>Receiver name *</label>
+                    <input style={fieldStyle} value={receiverName} onChange={(e) => setReceiverName(e.target.value)} />
+                    <label style={{ fontSize: 12, fontWeight: 600 }}>Receiver phone</label>
+                    <input style={fieldStyle} value={receiverPhone} onChange={(e) => setReceiverPhone(e.target.value)} />
+                    <label style={{ fontSize: 12, fontWeight: 600 }}>Condition</label>
+                    <input style={fieldStyle} value={condition} onChange={(e) => setCondition(e.target.value)} />
+                    <label style={{ fontSize: 12, fontWeight: 600 }}>Notes</label>
+                    <textarea style={fieldStyle} rows={3} value={deliveryNotes} onChange={(e) => setDeliveryNotes(e.target.value)} />
+                    <button className="btn btn-primary" disabled={busy || !receiverName.trim()} onClick={handleDeliver}>Complete delivery</button>
+                  </>
+                )}
+                {delivery.status === "delivered" && <p style={{ fontSize: 12, color: 'var(--gold-600)', margin: 0 }}>Delivered</p>}
+                {actionError && <p style={{ fontSize: 12, color: 'var(--rust-600)', margin: 0 }}>{actionError}</p>}
                 <p style={{ fontSize: 12, color: 'var(--ink-600)', margin: 0 }}>Issue reporting is not available yet.</p>
               </div>
             </Panel>

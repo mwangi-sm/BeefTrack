@@ -1,0 +1,113 @@
+.farmer-dashboard-skeleton {
+  margin-top: 4px;
+}
+
+.farmer-skeleton-block {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--cream-100) 20%, rgba(236, 204, 23, 0.18) 45%, var(--cream-100) 70%);
+  background-size: 240% 100%;
+  animation: farmer-skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+.farmer-skeleton-stat {
+  min-height: 128px;
+}
+
+.farmer-skeleton-stat-head,
+.farmer-skeleton-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.farmer-skeleton-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.farmer-skeleton-flag {
+  width: 58px;
+  height: 20px;
+  border-radius: 999px;
+}
+
+.farmer-skeleton-value {
+  width: 44px;
+  height: 30px;
+  margin-top: 14px;
+}
+
+.farmer-skeleton-label {
+  width: 78%;
+  margin-top: 7px;
+}
+
+.farmer-skeleton-panel {
+  min-height: 132px;
+}
+
+.farmer-skeleton-panel-head {
+  margin-bottom: 20px;
+}
+
+.farmer-skeleton-title {
+  width: 112px;
+  height: 16px;
+}
+
+.farmer-skeleton-link {
+  width: 46px;
+  height: 12px;
+}
+
+.farmer-skeleton-line {
+  width: 94%;
+  margin-top: 12px;
+}
+
+.farmer-skeleton-line.short {
+  width: 62%;
+}
+
+.farmer-skeleton-panel.farm-list {
+  min-height: 188px;
+}
+
+.farmer-skeleton-farm {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.farmer-skeleton-farm-icon {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+}
+
+.farmer-skeleton-farm-copy {
+  display: grid;
+  gap: 7px;
+  width: 72%;
+}
+
+.farmer-skeleton-farm-copy .short {
+  width: 58%;
+}
+
+@keyframes farmer-skeleton-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .farmer-skeleton-block {
+    animation: none;
+    background: var(--cream-100);
+  }
+}

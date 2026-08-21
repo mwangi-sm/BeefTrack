@@ -37,6 +37,12 @@ export function buildSignupMetadata(formData) {
     verification_status: "unverified",
     verified: false,
     full_name: fullName,
+    first_name: formData.firstName || "",
+    last_name: formData.lastName || "",
+    national_id: formData.nationalId || "",
+    farm_name: formData.farmName || "",
+    county: formData.county || "",
+    location: formData.location || "",
     phone: formData.phone || "",
     account_type: formData.accountType || "",
   };
@@ -57,5 +63,13 @@ export function toAuthenticatedUser(user) {
     verified: user.user_metadata?.verified === true,
     accountType: user.user_metadata?.account_type || "",
     fullname: user.user_metadata?.full_name || user.user_metadata?.fullname || user.email || user.phone || "",
+    profile: {
+      firstName: user.user_metadata?.first_name || "",
+      lastName: user.user_metadata?.last_name || "",
+      nationalId: user.user_metadata?.national_id || "",
+      farmName: user.user_metadata?.farm_name || "",
+      county: user.user_metadata?.county || "",
+      location: user.user_metadata?.location || "",
+    },
   };
 }

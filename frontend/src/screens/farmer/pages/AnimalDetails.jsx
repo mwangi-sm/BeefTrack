@@ -3,6 +3,7 @@ import { DashboardShell } from '../../../components/DashboardShell'
 import { InfoItem } from '../components/InfoItem'
 import { Icon, IconPaths } from '../../../components/icons'
 import { getFarmerNavItems } from '../data/farmerNav'
+import { DecryptedText } from '../../../components/reactbits'
 
 export function AnimalDetails({ animal, farm, onGoHome, onGoFarmSetup, onGoAnimalSetup, onGoMyFarms, onGoMyAnimals, onGoHealthRecords, onBack, onToggleTheme, onLogout }) {
   const navItems = getFarmerNavItems('myanimals', {
@@ -28,7 +29,7 @@ export function AnimalDetails({ animal, farm, onGoHome, onGoFarmSetup, onGoAnima
       <div className="dash-head">
         <div>
           <p className="eyebrow" style={{ color: 'var(--gold-600)' }}>Animal details</p>
-          <h1 className="mono">{animal.id}</h1>
+          <h1 className="mono"><DecryptedText text={animal.id} animateOn="view" speed={30} maxIterations={7} monospace={false} /></h1>
           <p className="sub">Full record for this animal.</p>
         </div>
         <div className="quick-actions">
@@ -41,7 +42,7 @@ export function AnimalDetails({ animal, farm, onGoHome, onGoFarmSetup, onGoAnima
           <Icon size={30}>{IconPaths.animal}</Icon>
         </div>
         <div className="detail-head-info">
-          <h2 className="mono">{animal.id}</h2>
+          <h2 className="mono"><DecryptedText text={animal.id} animateOn="view" speed={30} maxIterations={7} monospace={false} /></h2>
           <div className="detail-head-meta">
             <span className="mono">{animal.rfid}</span>
             <span>{animal.breed || 'Breed not recorded'}</span>

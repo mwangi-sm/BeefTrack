@@ -1,0 +1,8 @@
+.rb-decrypted-text {
+  display: inline-block;
+  letter-spacing: 0.4px;
+}
+
+.rb-decrypted-text--mono {
+  font-family: var(--mono, ui-monospace, 'IBM Plex Mono', Consolas, monospace);
+}

@@ -9,7 +9,7 @@ import { IncomingBatchesPage, InventoryPage, VerifyProductPage, SalesPage, Notif
 import { DeliveryTrackingPage } from './DeliveryTrackingPage'
 import { SetupProfilePage } from './SetupProfilePage'
 import { RetailerReviewsPage, RetailerReportsPage } from '../FeedbackPages'
-
+import { StrokeText, SplitText, DecryptedText } from '../../components/reactbits'
 
 const navItems = [
   { label: 'Dashboard', icon: IconPaths.grid, active: true, path: '/dashboard/retailer' },
@@ -42,16 +42,27 @@ function RetailerHome({ user }) {
   const recentIncoming = incomingBatches.slice(0, 2)
   const recentInventory = inventory.slice(0, 4)
   const recentCustomerScans = notifications.filter((note) => note.type === 'scan').slice(0, 2)
-  // FIX: the context provides `deliveries`, not `inTransitShipments` — that
-  // field never existed, so reading `.length` off it would crash. Derive
-  // the in-transit list from the real data instead.
   const inTransitShipments = deliveries.filter((delivery) => delivery.status === 'in_transit')
 
   return (
     <>
       <DashHead
         greeting={`HELLO, ${user?.firstName || user?.contactFirstName || 'Retailer'}!`}
-        title="Dashboard"
+        title={
+          <StrokeText
+            as="span"
+            text="Know What You're Selling"
+            strokeColor="var(--gold-600)"
+            fillColor="var(--ink-900)"
+            strokeWidth={1.1}
+            drawDuration={1}
+            fillDelay={0.12}
+            stagger={0.02}
+            fontSize={36}
+            fontWeight={700}
+            letterSpacing={-1}
+          />
+        }
         subtitle="What's arrived, what's on the shelf, and what still needs verifying."
         actions={
           <>
@@ -77,48 +88,20 @@ function RetailerHome({ user }) {
       )}
 
       <div className="stat-grid">
-        <StatCard
-          icon={IconPaths.storefront}
-          flagText="Received"
-          value={stats.batchesReceivedToday}
-          label="Batches received today"
-          onClick={() => navigate('/dashboard/retailer/incoming')}
-        />
-
-        <StatCard
-          icon={IconPaths.boxes}
-          flagText="In stock"
-          value={stats.itemsOnShelf}
-          label="Items on shelf"
-          onClick={() => navigate('/dashboard/retailer/inventory')}
-        />
-
-        <StatCard
-          icon={IconPaths.qr}
-          flagText="Needs check"
-          flagType="attn"
-          value={stats.pendingVerification}
-          label="Pending verification"
-          onClick={() => navigate('/dashboard/retailer/verify')}
-        />
-
-        <StatCard
-          icon={IconPaths.sales}
-          flagText="Today"
-          value={stats.unitsSoldToday}
-          label="Units sold today"
-          onClick={() => navigate('/dashboard/retailer/sales')}
-        />
+        <StatCard icon={IconPaths.storefront} flagText="Received" value={stats.batchesReceivedToday} label="Batches received today" onClick={() => navigate('/dashboard/retailer/incoming')} />
+        <StatCard icon={IconPaths.boxes} flagText="In stock" value={stats.itemsOnShelf} label="Items on shelf" onClick={() => navigate('/dashboard/retailer/inventory')} />
+        <StatCard icon={IconPaths.qr} flagText="Needs check" flagType="attn" value={stats.pendingVerification} label="Pending verification" onClick={() => navigate('/dashboard/retailer/verify')} />
+        <StatCard icon={IconPaths.sales} flagText="Today" value={stats.unitsSoldToday} label="Units sold today" onClick={() => navigate('/dashboard/retailer/sales')} />
       </div>
 
       <div className="grid-2col">
         <div>
           {inTransitShipments.length > 0 && (
-            <Panel title="On the way from your distributor">
+            <Panel title={<SplitText tag="span" text="On the way from your distributor" splitType="words" duration={0.4} />}>
               {inTransitShipments.map((shipment) => (
                 <CareRow
                   key={shipment.id}
-                  id={shipment.id}
+                  id={<DecryptedText text={shipment.id} animateOn="view" speed={30} maxIterations={6} />}
                   type={`${shipment.packs} packs · ${shipment.cutType} · From ${shipment.fromName || shipment.from || 'Distributor'}`}
                   due={shipment.estimatedArrival ? `ETA ${shipment.estimatedArrival}` : 'In transit'}
                   status="soon"
@@ -129,18 +112,14 @@ function RetailerHome({ user }) {
           )}
 
           <Panel
-            title="Incoming batches"
-            action={
-              <a className="link" onClick={() => navigate('/dashboard/retailer/incoming')}>
-                View all
-              </a>
-            }
+            title={<SplitText tag="span" text="Incoming batches" splitType="words" duration={0.4} />}
+            action={<a className="link" onClick={() => navigate('/dashboard/retailer/incoming')}>View all</a>}
           >
             {recentIncoming.length === 0 && <p style={{ fontSize: 13.5, color: 'var(--ink-600)', margin: 0 }}>No batches are waiting right now.</p>}
             {recentIncoming.map((batch) => (
               <CareRow
                 key={batch.id}
-                id={batch.id}
+                id={<DecryptedText text={batch.id} animateOn="view" speed={30} maxIterations={6} />}
                 type={`${batch.packs} packs · From ${batch.from}`}
                 due={batch.status === 'verified' ? 'Verified and shelved' : 'Awaiting verification'}
                 status={batch.status === 'verified' ? 'ok' : 'soon'}
@@ -151,12 +130,8 @@ function RetailerHome({ user }) {
           </Panel>
 
           <Panel
-            title="Recent customer scans"
-            action={
-              <a className="link" onClick={() => navigate('/dashboard/retailer/notifications')}>
-                View all
-              </a>
-            }
+            title={<SplitText tag="span" text="Recent customer scans" splitType="words" duration={0.4} />}
+            action={<a className="link" onClick={() => navigate('/dashboard/retailer/notifications')}>View all</a>}
           >
             {recentCustomerScans.length === 0 && <p style={{ fontSize: 13.5, color: 'var(--ink-600)', margin: 0 }}>No customer scans yet.</p>}
             {recentCustomerScans.map((note) => (
@@ -167,12 +142,8 @@ function RetailerHome({ user }) {
 
         <div>
           <Panel
-            title="Shelf inventory"
-            action={
-              <a className="link" onClick={() => navigate('/dashboard/retailer/inventory')}>
-                Manage
-              </a>
-            }
+            title={<SplitText tag="span" text="Shelf inventory" splitType="words" duration={0.4} />}
+            action={<a className="link" onClick={() => navigate('/dashboard/retailer/inventory')}>Manage</a>}
           >
             {recentInventory.map((item) => (
               <InventoryRow key={item.id} icon={IconPaths.boxes} name={item.name} sub={item.lotId ? `Lot ${item.lotId}` : item.counter} count={`${item.packs} packs`} />
@@ -183,7 +154,6 @@ function RetailerHome({ user }) {
     </>
   )
 }
-
 function RetailerProfilePage({ user, onUpdateUser }) {
   // Build the profile shown/edited here straight from the signed-up account,
   // instead of hardcoded placeholder values.

@@ -2,6 +2,11 @@
 .cards-grid{
   display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:18px;
 }
+.list-toolbar{display:flex;gap:10px;margin:0 0 18px;flex-wrap:wrap;}
+.list-toolbar input,.list-toolbar select{min-height:42px;padding:10px 12px;border:1.5px solid var(--border-soft);border-radius:10px;background:var(--card-bg);color:var(--ink-900);font:inherit;font-size:13px;}
+.list-toolbar input{flex:1 1 240px;}
+.list-toolbar select{flex:0 1 180px;}
+.list-toolbar input:focus-visible,.list-toolbar select:focus-visible{outline:3px solid var(--gold-400);outline-offset:2px;}
 
 /* ---------- Farm card ---------- */
 .farm-card{
