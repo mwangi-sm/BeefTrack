@@ -1,15 +1,14 @@
 // src/lib/mockAuth.js
 //
-// Temporary mock "auth" layer, used until the backend team delivers real
-// endpoints (see the USE_MOCK toggle in your API layer) and/or the
-// AuthContext/Supabase wiring is complete. Remembers which role and
-// display name an identifier (email or phone) signed up under, plus who
-// is currently "logged in", so dashboards can render without a full
-// context provider yet.
+// DEPRECATED: This mock auth layer was used during development before
+// Supabase integration was complete. It MUST NOT be used in production.
 //
-// Swap this out later for real Supabase auth — the exported function
-// names/shapes here are what call sites depend on, not the storage
-// mechanism underneath.
+// SECURITY WARNING: Line 99 previously read user_metadata?.role which is
+// client-editable and untrusted. The app_metadata?.role field is the only
+// trusted source for authorization decisions.
+//
+// This file should be removed entirely once all call sites are migrated to
+// use the SupabaseSessionProvider and authSession.js exclusively.
 
 const STORAGE_KEY = 'beeftrace_mock_users';
 const SESSION_KEY = 'beeftrace_current_user';
